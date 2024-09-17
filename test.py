@@ -1,7 +1,8 @@
 import openai
 
 API_KEY = ""
-oai = openai.Client(api_key=API_KEY, base_url="http://0.0.0.0:8000/v1/")
+proxy_url = "http://0.0.0.0:8000"
+oai = openai.Client(api_key=API_KEY, base_url=f"{proxy_url}/v1/")
 
 def generate_text_oai(system_prompt, user_prompt, max_tokens=2000, model="yandexgpt/latest"):
     response = oai.chat.completions.create(
