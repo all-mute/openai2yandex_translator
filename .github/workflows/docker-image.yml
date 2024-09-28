@@ -1,0 +1,33 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+
+    - name: Run the Docker container
+      run: docker run -d --name my-container my-image-name:$(date +%s)
+
+    - name: Healthcheck
+      run: |
+        sleep 10 # Wait for the container to start
+        if [ "$(docker inspect --format='{{json .State.Health.Status}}' my-container)" != "\"healthy\"" ]; then
+          echo "Container is not healthy"
+          exit 1
+        fi
+
+    - name: Cleanup
+      run: docker rm -f my-container
