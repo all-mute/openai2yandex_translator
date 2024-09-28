@@ -133,10 +133,10 @@ async def completion(request: Request):
     except HTTPException as e:
         #raise HTTPException(status_code=500, detail=str(e))
         #print(e)
-        pass
+        return e
     except Exception as e:
         #print(e)
-        pass
+        return e
 
 @app.post("/v1/embeddings")
 async def embeddings(request: Request):
