@@ -55,7 +55,7 @@ client.embeddings.create(input = ['В каком году был основан 
 
 Быстрый запуск на vercel:
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fhello-world)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fall-mute%2Fyagpt2openai_translator)
 
 1. Если вам нужен доступ к ресурсам с автоматической аутентификацией, заполните данные параметры (in `.env` file, Dockerfile or cloud environment):
     - `FOLDER_ID`: your Yandex Cloud folder id
