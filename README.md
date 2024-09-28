@@ -1,6 +1,6 @@
 # Yandex GPT Translator
 
-Это лаконичное fastapi приложение (прокси), которое транслирует запросы OpenAI<->Yandex Cloud, чтобы сервисы Yandex Cloud можно было использовать в сторонних фреймворках через OpenAI SDK. Например:
+Это лаконичное fastapi приложение (прокси), которое транслирует запросы OpenAI<->Yandex Cloud Foundational Models, чтобы сервисы Yandex Cloud можно было использовать в сторонних фреймворках через OpenAI SDK. Например:
 
 ```python
 import openai
@@ -22,21 +22,24 @@ client.chat.completions.create(
                 "content": 'В каком году был основан Яндекс?',
             }
         ],
-        model="yandexgpt/latest",
+        model="yandexgpt/latest", 
+        # или f'gpt://{FOLDER_ID}/yandexgpt/latest' 
+        # или f'ds://{MODEL_ID}'
         max_tokens=2000,
         temperature=0.1,
     )
     
 # эмбеддинги текста
-client.embeddings.create(input = ['В каком году был основан Яндекс?'], model='text-search-doc/latest').data[0].embedding
+client.embeddings.create(input = ['В каком году был основан Яндекс?'], model='text-search-doc/latest').data[0].embedding # или model=f'emb://{FOLDER_ID}/text-search-doc/latest'
 ```
 
-Подробные примеры содержаттся в файле `test.py`.
+Подробные примеры содержатся в файле `test.py`.
 
 ## Поддерживаются:
 
-* Все GPT модели, uri которых начинаются с `gpt://`
+* Все модели генерации текста, uri которых начинаются с `gpt://`
 * Все Embedding модели, uri которых начинаются с `emb://`
+* Все дообученные модели генерации текста, uri которых начинаются с `ds://`
 
 ## Аутентификация
 
@@ -46,10 +49,17 @@ client.embeddings.create(input = ['В каком году был основан 
 
 ## Запуск
 
+Быстрый запуск на vercel:
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fhello-world)
 
 1. Если вам нужен доступ к ресурсам с аутентификацией по-умолчанию, заполните данные параметры (in `.env` file, Dockerfile or cloud environment):
     - `FOLDER_ID`: your Yandex Cloud folder id
     - `YANDEX_API_KEY`: your Yandex Cloud API key
 2. Запустите приложение (команды аналогичны для `podman`):
-    `docker-compose up -d --build` или `docker build -t image_name .`, `docker run -d -p 127.0.0.1:8000:8000 --name container_name image_name` или (для локального тестирования) `uvicorn main:app --host 0.0.0.0 --port 8000` 
+    - `docker-compose up -d --build` 
+    - или `docker build -t image_name .`, `docker run -d -p 127.0.0.1:8000:8000 --name container_name image_name` 
+    - или (для локального тестирования) `pip install -r requirements.txt`, `python main.py`
+
+## Решение проблем
+
+Если у вас возникли проблемы по работе с этим приложением, пожалуйста, создайте issue в этом репозитории, он активно поддерживается.
