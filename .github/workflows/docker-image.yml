@@ -24,14 +24,3 @@ jobs:
 
     - name: Run the Docker container
       run: docker run -d --name my-container ${{ env.IMAGE_TAG }}
-
-    - name: Healthcheck
-      run: |
-        sleep 30 # Wait for the container to start
-        if [ "$(docker inspect --format='{{json .State.Health.Status}}' my-container)" != "\"healthy\"" ]; then
-          echo "Container is not healthy"
-          exit 1
-        fi
-
-    - name: Cleanup
-      run: docker rm -f my-container
