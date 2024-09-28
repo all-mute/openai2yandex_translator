@@ -15,7 +15,7 @@ EXPOSE 8000
 ENV FOLDER_ID=""
 ENV YANDEX_API_KEY=""
 
-# Добавляем healthcheck
+# healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD curl --fail http://localhost:8000/health || exit 1
 

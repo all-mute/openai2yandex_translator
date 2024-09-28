@@ -27,7 +27,7 @@ jobs:
 
     - name: Healthcheck
       run: |
-        sleep 10 # Wait for the container to start
+        sleep 30 # Wait for the container to start
         if [ "$(docker inspect --format='{{json .State.Health.Status}}' my-container)" != "\"healthy\"" ]; then
           echo "Container is not healthy"
           exit 1
