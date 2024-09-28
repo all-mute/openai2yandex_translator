@@ -183,5 +183,15 @@ async def embeddings(request: Request):
 def health_check():
     return {"status": "healthy"}
 
+@app.get("/readyz")
+def readiness_probe():
+    # Здесь можно добавить проверки готовности
+    return {"status": "ready"}
+
+@app.get("/livez")
+def liveness_probe():
+    # Здесь можно добавить проверки работоспособности
+    return {"status": "alive"}
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, log_level="debug")
