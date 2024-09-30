@@ -57,7 +57,7 @@ def generate_yandexgpt_response(messages, model, temperature, max_tokens, yandex
     return result
 
 # Генерация ответа от Yandex GPT
-def generate_yandex_embeddings_response(text, model, yandex_api_key, folder_id) -> str:
+def generate_yandex_embeddings_response(text, model, yandex_api_key, folder_id):
     # Функция для отправки запроса в Yandex GPT
     def send_request_safety(payload, api_key):
         url = "https://llm.api.cloud.yandex.net:443/foundationModels/v1/textEmbedding"
