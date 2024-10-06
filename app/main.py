@@ -1,6 +1,6 @@
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request
-from yandex import generate_yandexgpt_response, generate_yandex_embeddings_response
+from app.yandex import generate_yandexgpt_response, generate_yandex_embeddings_response
 import time
 import os
 from loguru import logger
