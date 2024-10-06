@@ -10,7 +10,7 @@
       "APP_MODULE": "main:app"
     },
     "functions": {
-      "v1/**/*": {
+      "api/v1/**/*": {
         "maxDuration": 30
       }
     }
