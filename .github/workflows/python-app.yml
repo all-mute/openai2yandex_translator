@@ -1,0 +1,96 @@
+name: Run FastAPI Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      app:
+        image: tiangolo/uvicorn-gunicorn-fastapi:python3.12
+        ports:
+          - 8000:8000
+        options: >-
+          --health-cmd "curl --fail http://localhost:8000/health || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 3
+        volumes:
+          - ./:/app
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+
+    - name: Run fastapi tests
+      env:
+        FOLDER_ID: ${{ secrets.TEST_FOLDER_ID }}
+        YANDEX_API_KEY: ${{ secrets.TEST_YANDEX_API_KEY }}
+
+      run: |
+        pytest tests/test_fastapi.py --maxfail=1 --disable-warnings -v
+    
+    - name: Run tests without autoauth
+      env:
+        FOLDER_ID: ${{ secrets.TEST_FOLDER_ID }}
+        YANDEX_API_KEY: ${{ secrets.TEST_YANDEX_API_KEY }}
+
+      run: |
+        pytest tests/test_main.py --maxfail=1 --disable-warnings -v
+
+  test_with_autoauth:
+    runs-on: ubuntu-latest
+
+    services:
+      app:
+        image: tiangolo/uvicorn-gunicorn-fastapi:python3.12
+        ports:
+          - 8000:8000
+        env:
+          FOLDER_ID: ${{ secrets.TEST_FOLDER_ID }}
+          YANDEX_API_KEY: ${{ secrets.TEST_YANDEX_API_KEY }}
+        options: >-
+          --health-cmd "curl --fail http://localhost:8000/health || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 3
+        volumes:
+          - ./:/app
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+
+    - name: Run tests
+      env:
+        FOLDER_ID: dummy
+        YANDEX_API_KEY: dummy
+        
+      run: |
+        pytest test_main.py --maxfail=1 --disable-warnings -v
+
