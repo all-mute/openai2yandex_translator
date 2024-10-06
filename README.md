@@ -1,5 +1,8 @@
 # Yandex GPT Translator
 
+![Test Status](https://github.com/all-mute/openai2yandex_translator/actions/workflows/docker-image.yml/badge.svg)
+![Test Status](https://github.com/all-mute/openai2yandex_translator/actions/workflows/python-app.yml/badge.svg)
+
 - [Функционал](#функционал)
     - [Поддерживаемые модели](#поддерживаемые-модели)
     - [Аутентификация](#аутентификация)

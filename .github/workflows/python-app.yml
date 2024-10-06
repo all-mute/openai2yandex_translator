@@ -1,4 +1,4 @@
-name: Test FastAPI app from OpenAI SDK
+name: Tests
 
 on:
   push:
