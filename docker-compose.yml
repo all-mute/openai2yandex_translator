@@ -15,3 +15,5 @@ services:
     environment:
       - FOLDER_ID=
       - YANDEX_API_KEY=
+    volumes:
+      - ./logs:/app/logs
