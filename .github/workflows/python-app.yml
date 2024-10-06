@@ -1,4 +1,4 @@
-name: CI
+name: Test FastAPI app from OpenAI SDK
 
 on:
   push:

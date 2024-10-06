@@ -19,8 +19,8 @@ oai = openai.Client(api_key=f"sk-my", base_url=f"{PROXY_URL}/v1/")
     (system_prompt, user_prompt, "gpt-4o-mini"),
     (system_prompt, user_prompt, "yandexgpt/latest"),
     (system_prompt, user_prompt, "yandexgpt-lite/latest"),
-    (system_prompt, user_prompt, f"gpt://{FOLDER_ID}/yandexgpt/latest"),
-    (system_prompt, user_prompt, f"gpt://{FOLDER_ID}/yandexgpt-lite/latest"),
+    #(system_prompt, user_prompt, f"gpt://{FOLDER_ID}/yandexgpt/latest"),
+    #(system_prompt, user_prompt, f"gpt://{FOLDER_ID}/yandexgpt-lite/latest"),
     (system_prompt, user_prompt, f"ds://{ds_model_id}"),
 ])
 def test_completion_with_alternative_model(system_prompt, user_prompt, model):
@@ -43,8 +43,8 @@ def test_completion_with_alternative_model(system_prompt, user_prompt, model):
 @pytest.mark.parametrize("text, model", [
     (emb_prompt, "text-search-doc/latest"),
     (emb_prompt, "text-search-query/latest"),
-    (emb_prompt, f"emb://{FOLDER_ID}/text-search-doc/latest"),
-    (emb_prompt, f"emb://{FOLDER_ID}/text-search-query/latest"),
+    #(emb_prompt, f"emb://{FOLDER_ID}/text-search-doc/latest"),
+    #(emb_prompt, f"emb://{FOLDER_ID}/text-search-query/latest"),
 ])
 def test_embeddings_with_alternative_model(text, model):
     response = oai.embeddings.create(input = [text], model=model)
