@@ -27,7 +27,7 @@ jobs:
           --health-retries 3
         volumes:
           - ./:/app
-        command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+        run: uvicorn app.main:app --host 0.0.0.0 --port 8000
 
     steps:
     - name: Checkout code
@@ -76,7 +76,7 @@ jobs:
           --health-retries 3
         volumes:
           - ./:/app
-        command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+        run: uvicorn app.main:app --host 0.0.0.0 --port 8000
 
     steps:
     - name: Checkout code
