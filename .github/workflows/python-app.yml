@@ -38,4 +38,8 @@ jobs:
       run: sleep 5
 
     - name: Run tests
-      run: PYTHONPATH=. pytest tests/
+      env:
+        PYTHONPATH: .
+        FOLDER_ID: ${{ secrets.TEST_FOLDER_ID }}
+        YANDEX_API_KEY: ${{ secrets.TEST_YANDEX_API_KEY }}
+      run: pytest tests/
