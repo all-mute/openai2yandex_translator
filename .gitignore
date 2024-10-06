@@ -1,3 +1,5 @@
 .venv
 .env
 mytest.py
+__pycache__
+.vscode

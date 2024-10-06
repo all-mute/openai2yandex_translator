@@ -1,12 +1,17 @@
 {
     "version": 2,
     "builds": [
-      { "src": "main.py", "use": "@vercel/python" }
+      { "src": "app/main.py", "use": "@vercel/python" }
     ],
     "routes": [
-      { "src": "/(.*)", "dest": "/main.py" }
+      { "src": "/(.*)", "dest": "/app/main.py" }
     ],
     "env": {
       "APP_MODULE": "main:app"
+    },
+    "functions": {
+      "v1/**/*": {
+        "maxDuration": 30
+      }
     }
   }

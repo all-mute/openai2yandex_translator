@@ -37,10 +37,19 @@ def generate_yandexgpt_response(messages, model, temperature, max_tokens, yandex
     for message in messages:
         message['text'] = message['content']
         del message['content']
+        
+    if model == "gpt-4o":
+        model_uri = f"gpt://{folder_id}/yandexgpt/latest"
+    elif model == "gpt-4o-mini":
+        model_uri = f"gpt://{folder_id}/yandexgpt-lite/latest"
+    elif model.startswith("gpt://") or model.startswith("ds://"):
+        model_uri = model
+    else:
+        model_uri = f"gpt://{folder_id}/{model}"
     
     # Формирование запроса в формате Yandex GPT
     payload = {
-        "modelUri": f"{model}" if model.startswith("gpt://") or model.startswith("ds://") else f"gpt://{folder_id}/{model}",
+        "modelUri": model_uri,
         "completionOptions": {
             "stream": False,
             "temperature": temperature,
@@ -76,8 +85,15 @@ def generate_yandex_embeddings_response(text, model, yandex_api_key, folder_id):
             return f"Error: {response.status_code}, {response.text}"
     
     # Формирование запроса в формате Yandex GPT
+    if model == "text-embedding-3-large" or model == "text-embedding-3-small":
+        model_uri = f"emb://{folder_id}/text-search-doc/latest"
+    elif model.startswith("emb://") or model.startswith("ds://"):
+        model_uri = model
+    else:
+        model_uri = f"emb://{folder_id}/{model}"
+    
     payload = {
-        "modelUri": f"{model}" if model.startswith("emb://") or model.startswith("ds://") else f"emb://{folder_id}/{model}",
+        "modelUri": model_uri,
         "text": text
     }
     
