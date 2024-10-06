@@ -2,6 +2,7 @@
 
 ![Test Status](https://github.com/all-mute/openai2yandex_translator/actions/workflows/docker-image.yml/badge.svg)
 ![Test Status](https://github.com/all-mute/openai2yandex_translator/actions/workflows/python-app.yml/badge.svg)
+![Vercel](https://vercelbadge.vercel.app/api/all-mute/openai2yandex_translator)
 
 - [Функционал](#функционал)
     - [Поддерживаемые модели](#поддерживаемые-модели)

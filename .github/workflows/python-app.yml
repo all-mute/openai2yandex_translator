@@ -7,6 +7,8 @@ on:
   pull_request:
     branches:
       - main
+  schedule:
+    - cron: '0 0 * * *'
 
 jobs:
   test_auth:
@@ -39,12 +41,12 @@ jobs:
 
     - name: Run fastapi tests
       env:
-        PYTHONPATH: .
+        PYTHONPATH: ./app
       run: pytest tests/test_fastapi.py
 
     - name: Run SDK tests with auth
       env:
-        PYTHONPATH: .
+        PYTHONPATH: ./app
         FOLDER_ID: ${{ secrets.TEST_FOLDER_ID }}
         YANDEX_API_KEY: ${{ secrets.TEST_YANDEX_API_KEY }}
       run: pytest tests/test_main.py
