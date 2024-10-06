@@ -1,6 +1,7 @@
 import pytest
 import openai
 import os
+import time
 
 FOLDER_ID = os.getenv("FOLDER_ID", "")
 API_KEY = os.getenv("YANDEX_API_KEY", "")
@@ -24,6 +25,8 @@ oai = openai.Client(api_key=f"{FOLDER_ID}@{API_KEY}", base_url=f"{PROXY_URL}/v1/
     (system_prompt, user_prompt, f"ds://{ds_model_id}"),
 ])
 def test_completion_with_alternative_model(system_prompt, user_prompt, model):
+    time.sleep(0.25)
+    
     response = oai.chat.completions.create(
         messages=[
             {
@@ -53,37 +56,56 @@ def test_embeddings_with_alternative_model(text, model):
     assert len(vector) > 0 and isinstance(vector, list)
     assert isinstance(vector[0], float)
 
-@pytest.mark.skip(reason="skip")
-def test_completion_with_invalid_authorization():
-    oai_wrong = openai.Client(api_key="invalid-key", base_url=f"{PROXY_URL}/v1/")
-    try:
-        oai_wrong.chat.completions.create(
+@pytest.mark.parametrize("key", [
+    "sk-my",
+    #"invalid-key",
+    "invalid@key",
+])
+def test_completion_with_invalid_authorization(key):
+    oai_wrong = openai.Client(api_key=key, base_url=f"{PROXY_URL}/v1/")
+
+    response = oai_wrong.chat.completions.create(
             model="gpt://test-folder-id/alternative-model",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": "What is the meaning of life?"}
             ]
         )
-    except Exception as e:
-        assert isinstance(e, openai.error.AuthenticationError)
+    
+    assert hasattr(response, 'error') and response.error
 
-@pytest.mark.skip(reason="skip")
+
 def test_completion_with_invalid_model():
-    try:
-        oai.chat.completions.create(
+
+    response = oai.chat.completions.create(
             model="invalid-model",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ]
         )
-    except Exception as e:
-        assert isinstance(e, str)
-        
-@pytest.mark.skip(reason="skip")
+
+    assert hasattr(response, 'error') and response.error
+
+
 def test_completion_with_invalid_parameters():
-    try:
-        oai.chat.completions.create(
+
+    response = oai.chat.completions.create(
+            model="yandexgpt/latest",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=2,
+            max_tokens=10_000,
+        )
+    
+    assert hasattr(response, 'error') and response.error
+        
+
+def test_completion_with_additional_parameters():
+
+    response = oai.chat.completions.create(
             model="yandexgpt/latest",
             messages=[
                 {"role": "system", "content": system_prompt},
@@ -92,12 +114,13 @@ def test_completion_with_invalid_parameters():
             presence_penalty=2,
             seed=42,
         )
-    except Exception as e:
-        assert isinstance(e, str)
+    
+    assert not (hasattr(response, 'error') and response.error)
 
-@pytest.mark.skip(reason="skip")
+@pytest.mark.skip(reason="no way of currently testing this")
 def test_embeddings_with_invalid_parameters():
-    try:
-        oai.embeddings.create(input = [emb_prompt], model='invalid-model')
-    except Exception as e:
-        assert isinstance(e, str)
+
+    response = oai.embeddings.create(input = [emb_prompt], model='invalid-model')
+    
+    assert hasattr(response, 'error') and response.error
+    
