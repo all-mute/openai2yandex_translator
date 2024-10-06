@@ -17,6 +17,9 @@ jobs:
         image: tiangolo/uvicorn-gunicorn-fastapi:python3.12
         ports:
           - 8000:8000
+        #env:
+        #  FOLDER_ID: ${{ secrets.TEST_FOLDER_ID }}
+        #  YANDEX_API_KEY: ${{ secrets.TEST_YANDEX_API_KEY }}
         options: >-
           --health-cmd "curl --fail http://localhost:8000/health || exit 1"
           --health-interval 10s
@@ -24,6 +27,7 @@ jobs:
           --health-retries 3
         volumes:
           - ./:/app
+        command: uvicorn app.main:app --host 0.0.0.0 --port 8000
 
     steps:
     - name: Checkout code
@@ -72,6 +76,7 @@ jobs:
           --health-retries 3
         volumes:
           - ./:/app
+        command: uvicorn app.main:app --host 0.0.0.0 --port 8000
 
     steps:
     - name: Checkout code
