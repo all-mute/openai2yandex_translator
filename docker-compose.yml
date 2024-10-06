@@ -12,3 +12,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 5s
+    environment:
+      - FOLDER_ID=
+      - YANDEX_API_KEY=
