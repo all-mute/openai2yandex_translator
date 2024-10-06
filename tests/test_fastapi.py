@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from app.main import app
+from app.main import app  # Изменено на абсолютный импорт
 
 client = TestClient(app)
 

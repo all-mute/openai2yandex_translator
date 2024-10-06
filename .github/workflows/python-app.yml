@@ -35,7 +35,7 @@ jobs:
         PYTHONUNBUFFERED: '1'
 
     - name: Wait for the server to start
-      run: sleep 5  # Подождите несколько секунд, чтобы приложение успело стартовать
+      run: sleep 5
 
     - name: Run tests
-      run: pytest tests/
+      run: PYTHONPATH=. pytest tests/
