@@ -8,10 +8,5 @@
     ],
     "env": {
       "APP_MODULE": "main:app"
-    },
-    "functions": {
-      "api/v1/**/*": {
-        "maxDuration": 30
-      }
     }
   }
