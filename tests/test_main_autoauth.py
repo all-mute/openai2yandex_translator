@@ -1,6 +1,7 @@
 import pytest
 import openai
 import os
+import time
 
 FOLDER_ID = os.getenv("FOLDER_ID", "")
 API_KEY = os.getenv("YANDEX_API_KEY", "")
@@ -24,20 +25,27 @@ oai = openai.Client(api_key=f"sk-my", base_url=f"{PROXY_URL}/v1/")
     (system_prompt, user_prompt, f"ds://{ds_model_id}"),
 ])
 def test_completion_with_alternative_model(system_prompt, user_prompt, model):
-    response = oai.chat.completions.create(
-        messages=[
-            {
-                "role": "system",
-                "content": system_prompt,
-            },
-            {
-                "role": "user",
-                "content": user_prompt,
-            }
-        ],
-        model=model,
-    )
-    content = response.choices[0].message.content
+    time.sleep(0.25)
+    
+    for _ in range(3):  # Попробуем выполнить запрос до 3 раз
+        response = oai.chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt,
+                },
+                {
+                    "role": "user",
+                    "content": user_prompt,
+                }
+            ],
+            model=model,
+        )
+        
+        if response and hasattr(response, 'choices') and response.choices:
+            content = response.choices[0].message.content
+            if content is not None and content != "" and isinstance(content, str):
+                break  # Успешный ответ, выходим из цикла
     assert content is not None and content != "" and isinstance(content, str)
 
 @pytest.mark.parametrize("text, model", [

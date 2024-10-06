@@ -3,4 +3,4 @@
 mytest.py
 __pycache__
 .vscode
-debug.log
+logs/debug.log

@@ -5,7 +5,7 @@ import time
 import os
 from loguru import logger
 
-logger.add("debug.log", format="{time} {level} {message}", level="DEBUG", rotation="10 MB")
+logger.add("logs/debug.log", format="{time} {level} {message}", level="INFO", rotation="100 MB")
 
 app = FastAPI()
 
@@ -13,33 +13,50 @@ app = FastAPI()
 FOLDER_ID = os.getenv("FOLDER_ID", "")
 YANDEX_API_KEY = os.getenv("YANDEX_API_KEY", "")
 
-# Маршрут для обработки запроса
 @app.post("/v1/chat/completions")
 async def completion(request: Request):
+    logger.info("Обработка запроса на генерацию ответа.")
+    logger.debug(f"Запрос: {request.method} {request.url}")
+    logger.debug(f"Заголовки: {request.headers}")
+    logger.debug(f"Тело запроса: {await request.json()}")
+    logger.debug(f"IP-адрес отправителя: {request.client.host}")
     try:
-        # take out OPENAI_API_KEY from header "Authorization: Bearer $OPENAI_API_KEY"
+        logger.debug("Получение OPENAI_API_KEY из заголовка запроса.")
         openai_api_key = request.headers.get("Authorization", "").split("Bearer ")[-1].strip()
+        
+        logger.debug(f"Извлеченный OPENAI_API_KEY: {openai_api_key}")
+        
+        # Определение Yandex API ключа и ID папки
         if openai_api_key in ("sk-my", "", " "):
             yandex_api_key, folder_id = YANDEX_API_KEY, FOLDER_ID
+            logger.debug("Использование Yandex API ключа из переменных окружения.")
         else:
             folder_id, yandex_api_key = openai_api_key.split("@")
+            logger.debug(f"Использование Yandex API ключа: {yandex_api_key} и ID папки: {folder_id}.")
         
+        # Получение данных из запроса
         body = await request.json()
-        request.model = body.get("model")
-        request.max_tokens = body.get("max_tokens", 2048)
-        request.temperature = body.get("temperature", 0.3)
-        request.messages = body.get("messages", [])
+        model = body.get("model")
+        max_tokens = body.get("max_tokens", 2048)
+        temperature = body.get("temperature", 0.3)
+        messages = body.get("messages", [])
         
-        yandex_response, yandex_error = generate_yandexgpt_response(request.messages, request.model, request.temperature, request.max_tokens, yandex_api_key, folder_id)
+        logger.debug(f"Полученные данные: model={model}, max_tokens={max_tokens}, temperature={temperature}, messages={messages}")
+        logger.info(f"Используемая модель: {model}")
+        
+        # Генерация ответа от Yandex GPT
+        yandex_response, yandex_error = generate_yandexgpt_response(messages, model, temperature, max_tokens, yandex_api_key, folder_id)
         
         if yandex_error:
+            logger.error(f"Ошибка при генерации ответа от Yandex GPT: {yandex_error}")
             return yandex_error
+        
         # Формирование ответа в формате OpenAI
         openai_format_response = {
             "id": "chatcmpl-42",
             "object": "chat.completion",
             "created": int(time.time()),
-            "model": request.model,
+            "model": model,
             "system_fingerprint": "42",
             "choices": [{
                 "index": 0,
@@ -57,55 +74,65 @@ async def completion(request: Request):
             }
         }
         
+        logger.debug("Формирование ответа в формате OpenAI завершено.")
         return openai_format_response
     except HTTPException as e:
-        #raise HTTPException(status_code=500, detail=str(e))
-        #print(e)
-        return e
+        logger.error(f"HTTP ошибка: {str(e)}")
+        return {"error": str(e)}  # Возврат ошибки в формате JSON
     except Exception as e:
-        #print(e)
-        return e
+        logger.error(f"Неожиданная ошибка: {str(e)}")
+        return {"error": "An unexpected error occurred."}  # Обработка неожиданных ошибок
 
 @app.post("/v1/embeddings")
 async def embeddings(request: Request):
+    logger.info("Обработка запроса на генерацию эмбеддинга.")
+    logger.debug(f"Запрос: {request.method} {request.url}")
+    logger.debug(f"Заголовки: {request.headers}")
+    logger.debug(f"Тело запроса: {await request.json()}")
+    logger.debug(f"IP-адрес отправителя: {request.client.host}")
     try:
-        # take out OPENAI_API_KEY from header "Authorization: Bearer $OPENAI_API_KEY"
+        # Извлечение OPENAI_API_KEY из заголовка "Authorization: Bearer $OPENAI_API_KEY"
         openai_api_key = request.headers.get("Authorization", "").split("Bearer ")[-1].strip()
+        logger.debug(f"Извлечённый OPENAI_API_KEY: {openai_api_key}")
+        
         if openai_api_key in ("sk-my", "", " "):
             yandex_api_key, folder_id = YANDEX_API_KEY, FOLDER_ID
+            logger.debug("Используются ключи по умолчанию YANDEX_API_KEY и FOLDER_ID.")
         else:
             folder_id, yandex_api_key = openai_api_key.split("@")
+            logger.debug(f"Используемые ключи: folder_id={folder_id}, yandex_api_key={yandex_api_key}")
         
         body = await request.json()
-        request.model = body.get("model")
-        request.input = body.get("input")[0]
+        model = body.get("model")
+        input_data = body.get("input", [None])[0]  # Обработка случая, если input отсутствует
+        logger.debug(f"Полученные данные: model={model}, input_data={input_data}")
+        logger.info(f"Используемая модель: {model}")
         
-        yandex_vector = generate_yandex_embeddings_response(request.input, request.model, yandex_api_key, folder_id)
+        yandex_vector = generate_yandex_embeddings_response(input_data, model, yandex_api_key, folder_id)
+        
         # Формирование ответа в формате OpenAI
         openai_format_response = {
             "object": "list",
-            "data": [
-                {
+            "data": [{
                 "object": "embedding",
                 "index": 0,
                 "embedding": yandex_vector,
-                }
-            ],
-            "model": request.model,
+            }],
+            "model": model,
             "usage": {
-                "prompt_tokens": 42,
+                "prompt_tokens": 42,  # Примерное значение
                 "total_tokens": 42
             }
         }
         
+        logger.info("Формирование ответа в формате OpenAI завершено.")
         return openai_format_response
     except HTTPException as e:
-        #raise HTTPException(status_code=500, detail=str(e))
-        #print(e)
-        pass
+        logger.error(f"HTTP ошибка: {str(e)}")
+        return {"error": str(e)}  # Возврат ошибки в формате JSON
     except Exception as e:
-        #print(e)
-        pass
+        logger.error(f"Неожиданная ошибка: {str(e)}")
+        return {"error": "An unexpected error occurred."}  # Обработкаunexpected ошибок
 
 @app.get("/health")
 def health_check():
