@@ -101,7 +101,7 @@ client.embeddings.create(input = ['В каком году был основан 
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fall-mute%2Fyagpt2openai_translator)
 
-Для использования автоматической аутентификации, заполните `FOLDER_ID` & `YANDEX_API_KEY` на странице деплоя.
+Для использования автоматической аутентификации, заполните `FOLDER_ID` & `YANDEX_API_KEY` на странице деплоя. Укажите `VERCEL=True`.
 
 ### Локальный/облачный запуск
 
@@ -111,11 +111,11 @@ client.embeddings.create(input = ['В каком году был основан 
 2. Запустите приложение:
     - `docker-compose up -d --build` 
     - или (команды аналогичны для `podman`) `docker build -t image_name .`, затем `docker run -d -p 127.0.0.1:8000:8000 --name container_name image_name` 
-    - или (для локального тестирования) `pip install -r requirements.txt`, затем `python main.py`
+    - или (для локального тестирования) `pip install -r requirements.txt`, затем `python app/main.py`
 
 ## Решение проблем
 
-Если у вас возникли проблемы по работе с этим приложением, **пожалуйста, создайте issue** в этом репозитории, он активно поддерживается.
+Если у вас возникли проблемы по работе с этим приложением, **пожалуйста, создайте issue** в этом репозитории, он активно поддерживается. Оперативно по проблемам писать tg `@nongilgameshj`
 
 * Чтобы ходить в дообученную gpt, пользователь/сервисный аккаунт должны быть участниками проекта DataShpere с ролью `developer`
 * При деплое через serverless платформы (vervel, yc functions) не забудьте выставить timeout 30 секунд
