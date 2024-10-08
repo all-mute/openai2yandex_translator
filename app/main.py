@@ -1,11 +1,20 @@
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request
 from app.yandex import generate_yandexgpt_response, generate_yandex_embeddings_response
-import time
-import os
+import os, sys, time
 from loguru import logger
 
-logger.add("logs/debug.log", format="{time} {level} {message}", level="INFO", rotation="100 MB")
+# Проверяем, запущено ли приложение на Vercel
+is_vercel = os.getenv("VERCEL", False)
+
+# Настраиваем логирование
+if is_vercel:
+    # Логи выводятся в консоль
+    logger.add(sys.stdout, format="{time} {level} {message}", level="INFO")
+else:
+    # Логи записываются в файл
+    logger.add("logs/debug.log", format="{time} {level} {message}", level="INFO", rotation="100 MB")
+
 
 app = FastAPI()
 
