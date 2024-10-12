@@ -100,9 +100,9 @@ client.embeddings.create(input = ['В каком году был основан 
 
 ### Коммунальныые трансляторы (без деплоя)
 
-1. **Yandex Cloud**, `ru-central1-a`. Stateless режим, запросы не логируются. https://apps.llmplay.space/translator ![Yandex](https://apps.llmplay.space/translator/badge)
+1. **Yandex Cloud**, `ru-central1-a`. Stateless режим, запросы не логируются. https://apps.llmplay.space/translator Status: ![Yandex](https://apps.llmplay.space/translator/badge)
 
-2. **Vercel** https://openai2yandex-translator.vercel.app ![Vercel](https://openai2yandex-translator.vercel.app/badge)
+2. **Vercel** https://openai2yandex-translator.vercel.app Status: ![Vercel](https://openai2yandex-translator.vercel.app/badge)
 
 
 ### Быстрый запуск на vercel:
