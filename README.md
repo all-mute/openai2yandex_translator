@@ -1,5 +1,6 @@
 # OpenAI SDK to Yandex GPT Translator
 
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 ![Test Status](https://github.com/all-mute/openai2yandex_translator/actions/workflows/docker-image.yml/badge.svg)
 ![Test Status](https://github.com/all-mute/openai2yandex_translator/actions/workflows/python-app.yml/badge.svg)
 ![Vercel](https://vercelbadge.vercel.app/api/all-mute/openai2yandex_translator)
