@@ -10,14 +10,14 @@ COPY . /app/
 # Устанавливаем FastAPI и Uvicorn
 RUN pip install -r requirements.txt
 
-EXPOSE 8000
+EXPOSE 9041
 
 ENV FOLDER_ID=""
 ENV YANDEX_API_KEY=""
 
 # healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD curl --fail http://localhost:8000/health || exit 1
+  CMD curl --fail http://localhost:9041/health || exit 1
 
 # Команда для запуска приложения
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "9041"]

@@ -4,10 +4,10 @@ services:
   yandexgpt_openai_translator:
     build: .
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:9041:9041"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "--fail", "http://localhost:9041/health"]
       interval: 30s
       timeout: 10s
       retries: 3

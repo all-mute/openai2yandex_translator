@@ -1,11 +1,13 @@
 import pytest
 import openai
-import os
-import time
+import time, json, os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 FOLDER_ID = os.getenv("FOLDER_ID", "")
 API_KEY = os.getenv("YANDEX_API_KEY", "")
-PROXY_URL = "http://localhost:8000"
+PROXY_URL = "http://localhost:9041"
 
 system_prompt = "Answer with only one word to my question"
 user_prompt = "What is the meaning of life?"
@@ -47,10 +49,45 @@ def test_completion_with_alternative_model(system_prompt, user_prompt, model):
             if content is not None and content != "" and isinstance(content, str):
                 break  # Успешный ответ, выходим из цикла
     assert content is not None and content != "" and isinstance(content, str)
+    
+@pytest.mark.parametrize("model", [
+    "gpt-4o",
+    "gpt-4o-mini",
+    "yandexgpt/latest",
+    "yandexgpt-lite/latest",
+    f"gpt://{FOLDER_ID}/yandexgpt/latest",
+    f"gpt://{FOLDER_ID}/yandexgpt-lite/latest",
+    f"ds://{ds_model_id}",
+])
+def test_streaming_completion(model):
+    time.sleep(0.5)  # Allow some time for the server to be ready
 
+    response = oai.chat.completions.create(
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        model=model,
+        stream=True,
+    )
+    
+    collected_chunks = []
+    collected_messages = []
+    
+    for chunk in response:
+        collected_chunks.append(chunk)  # save the event response
+        chunk_message = chunk.choices[0].delta.content  # extract the message
+        collected_messages.append(chunk_message)
+
+    collected_messages = [m for m in collected_messages if m is not None]
+    full_reply_content = ''.join(collected_messages)
+    assert full_reply_content is not None and full_reply_content != "" and isinstance(full_reply_content, str)
+    
 @pytest.mark.parametrize("text, model", [
     (emb_prompt, "text-search-doc/latest"),
     (emb_prompt, "text-search-query/latest"),
+    (emb_prompt, "text-embedding-3-large"),
+    (emb_prompt, "text-embedding-3-small"),
     (emb_prompt, f"emb://{FOLDER_ID}/text-search-doc/latest"),
     (emb_prompt, f"emb://{FOLDER_ID}/text-search-query/latest"),
 ])

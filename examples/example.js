@@ -9,7 +9,7 @@ const OpenAI = require('openai');
 const key = "sk-my";
 
 // задайте адрес вашей прокси
-const proxyUrl = "http://0.0.0.0:8000";
+const proxyUrl = "http://0.0.0.0:9041";
 
 // создайте клиент OpenAI с измененным base_url
 const openai = new OpenAI({
