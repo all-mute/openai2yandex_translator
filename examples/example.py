@@ -9,7 +9,7 @@ import openai
 key = "sk-my"
 
 # задайте адрес вашей прокси
-proxy_url = "http://0.0.0.0:8000"
+proxy_url = "http://0.0.0.0:9041"
 
 # создайте клиент OpenAI с измененным base_url
 oai = openai.Client(api_key=key, base_url=f"{proxy_url}/v1/")

@@ -1,9 +1,86 @@
-import requests
-import time
+import httpx
+import time, json
 from fastapi import HTTPException
 from loguru import logger
+from app.models import CompletionResponse, TextEmbeddingResponse, CompletionRequest, TextEmbeddingRequest
 
-def generate_yandexgpt_response(messages, model: str, temperature: float, max_tokens: int, yandex_api_key: str, folder_id: str) -> str:
+async def generate_yandexgpt_stream_response(messages, model: str, temperature: float, max_tokens: int, yandex_api_key: str, folder_id: str):
+    url = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {yandex_api_key}" if yandex_api_key.startswith('t1') else f"Api-Key {yandex_api_key}",
+        'x-folder-id': folder_id
+    }
+    
+    # Преобразование сообщений в формат Yandex GPT
+    for message in messages:
+        message['text'] = message.get('content')
+        message.pop('content', None)  # Удаление поля 'content', если оно существует
+
+    model_uri = _get_completions_model_uri(model, folder_id)
+    logger.debug(f"Определён URI модели: {model_uri}")
+    
+    payload = {
+        "modelUri": model_uri,
+        "completionOptions": {
+            "stream": True,
+            "temperature": temperature,
+            "maxTokens": max_tokens
+        },
+        "messages": messages
+    }
+    
+    logger.info("Формирование запроса завершено, отправка запроса в Yandex GPT.")
+    
+    generated_len = 0
+    finished = False
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, headers=headers, json=payload, timeout=15)
+        async for line in response.aiter_lines():
+            if line:
+                logger.debug(f"Полученная строка: {line}")
+                json_line = json.loads(line)  # Преобразование строки в JSON
+                
+                if 'result' in json_line:
+                    response_obj = CompletionResponse(**json_line['result'])
+                    logger.debug(f"Преобразованный объект: {response_obj}")
+
+                    content = response_obj.alternatives[0].message.text[generated_len:]
+                    generated_len = len(response_obj.alternatives[0].message.text)
+
+                    response_data = {
+                        "id": "chatcmpl-42",  # Здесь можно использовать уникальный ID
+                        "object": "chat.completion.chunk",
+                        "created": str(time.time()),
+                        "model": "gpt-4o-mini-2024-07-18",
+                        "system_fingerprint": "fp_e2bde53e6",
+                        "choices": [
+                            {
+                                "index": 0,
+                                "delta": {
+                                    "role": "assistant",  # Добавляем роль
+                                    "content": content
+                                },
+                                "logprobs": None,
+                                "finish_reason": None if response_obj.alternatives[0].status == "ALTERNATIVE_STATUS_PARTIAL" else "stop"
+                            }
+                        ]
+                    }
+
+                    logger.debug(f"Отправка данных: {response_data}")
+                    yield f"data: {json.dumps(response_data, ensure_ascii=False)}\n\n"
+
+                if response_obj.alternatives[0].status == "ALTERNATIVE_STATUS_COMPLETE":
+                    finished = True
+                    break
+
+    if finished:
+        yield "data: [DONE]\n\n"
+
+                    
+
+async def generate_yandexgpt_response(messages, model: str, temperature: float, max_tokens: int, yandex_api_key: str, folder_id: str) -> tuple[CompletionResponse, None] | tuple[None, dict]:
     """
     Генерация ответа от Yandex GPT.
 
@@ -17,7 +94,7 @@ def generate_yandexgpt_response(messages, model: str, temperature: float, max_to
     """
     logger.debug("Начало генерации ответа от Yandex GPT.")
     
-    def send_request_safety(payload: dict, api_key: str) -> tuple:
+    async def _send_request_safety(payload: dict, api_key: str) -> tuple[CompletionResponse, None] | tuple[None, dict]:
         """
         Отправка запроса в Yandex GPT с обработкой ошибок.
 
@@ -25,6 +102,7 @@ def generate_yandexgpt_response(messages, model: str, temperature: float, max_to
         :param api_key: API ключ для авторизации.
         :return: Ответ от Yandex GPT или ошибка.
         """
+        
         url = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
         headers = {
             "Content-Type": "application/json",
@@ -34,14 +112,21 @@ def generate_yandexgpt_response(messages, model: str, temperature: float, max_to
 
         logger.debug(f"Отправка запроса на {url} с заголовками: {headers} и данными: {payload}")
         
-        response = requests.post(url, headers=headers, json=payload, timeout=180)
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, headers=headers, json=payload, timeout=60)
+        
         if response.status_code == 200:
-            response_json = response.json()
-            text = response_json['result']['alternatives'][0]['message']['text']
+            logger.debug(f"Ответ от Yandex GPT: {response.json()}")
+            
+            response_obj = CompletionResponse(**response.json()['result'])
+            
             logger.info("Запрос успешно выполнен, получен ответ от Yandex GPT.")
-            return text, None
+            
+            return response_obj, None
+        
         else:
             logger.error(f"Ошибка при выполнении запроса: {response.text}, статус код: {response.status_code}")
+            
             return None, {
                 "error": {
                     "message": f"Ошибка: {response.text}",
@@ -53,16 +138,12 @@ def generate_yandexgpt_response(messages, model: str, temperature: float, max_to
     
     # Преобразование сообщений в формат Yandex GPT
     for message in messages:
-        message['text'] = message.pop('content', '')
+        # Извлечение текста из поля 'content' и замена его на 'text'
+        message['text'] = message.get('content')
+        message.pop('content')  # Удаление поля 'content', если оно существует
 
     # Определение URI модели
-    model_uri = (
-        f"gpt://{folder_id}/yandexgpt/latest" if model == "gpt-4o" else
-        f"gpt://{folder_id}/yandexgpt-lite/latest" if model == "gpt-4o-mini" else
-        model if model.startswith(("gpt://", "ds://")) else
-        f"gpt://{folder_id}/{model}"
-    )
-    
+    model_uri = _get_completions_model_uri(model, folder_id)
     logger.debug(f"Определён URI модели: {model_uri}")
     
     # Формирование запроса
@@ -77,9 +158,10 @@ def generate_yandexgpt_response(messages, model: str, temperature: float, max_to
     }
     
     logger.info("Формирование запроса завершено, отправка запроса в Yandex GPT.")
-    return send_request_safety(payload, yandex_api_key)
+    
+    return await _send_request_safety(payload, yandex_api_key)
 
-def generate_yandex_embeddings_response(text: str, model: str, yandex_api_key: str, folder_id: str) -> list:
+async def generate_yandex_embeddings_response(text: str, model: str, yandex_api_key: str, folder_id: str) -> tuple[TextEmbeddingResponse, None] | tuple[None, dict]:
     """
     Генерация эмбеддингов с использованием Yandex GPT.
 
@@ -91,7 +173,7 @@ def generate_yandex_embeddings_response(text: str, model: str, yandex_api_key: s
     """
     logger.debug("Начало генерации эмбеддингов.")
     
-    def send_request_safety(payload: dict, api_key: str) -> list:
+    async def _send_request_safety(payload: dict, api_key: str) -> tuple[TextEmbeddingResponse, None] | tuple[None, dict]:
         """
         Отправка запроса в Yandex GPT с обработкой ошибок.
 
@@ -108,21 +190,28 @@ def generate_yandex_embeddings_response(text: str, model: str, yandex_api_key: s
 
         logger.debug(f"Отправка запроса на {url} с заголовками: {headers} и данными: {payload}")
         
-        response = requests.post(url, headers=headers, json=payload, timeout=180)
+        response = httpx.post(url, headers=headers, json=payload, timeout=15)
+        
         if response.status_code == 200:
+            
             logger.info("Запрос успешно выполнен, получен ответ от Yandex GPT.")
-            return response.json().get("embedding", [])
+            logger.debug(f"Ответ от Yandex GPT: {response.json()}")
+            
+            return TextEmbeddingResponse(**response.json()), None
+        
         else:
             logger.error(f"Ошибка при выполнении запроса: {response.text}, статус код: {response.status_code}")
-            return [f"Ошибка: {response.status_code}, {response.text}"]
+            
+            return None, {
+                "error": {
+                    "message": f"Ошибка: {response.text}",
+                    "type": "api_error",
+                    "param": None,
+                    "code": response.status_code
+                }
+            }
     
-    # Формирование URI модели
-    model_uri = (
-        f"emb://{folder_id}/text-search-doc/latest" if model in ["text-embedding-3-large", "text-embedding-3-small"] else
-        model if model.startswith(("emb://", "ds://")) else
-        f"emb://{folder_id}/{model}"
-    )
-    
+    model_uri = _get_embedding_model_uri(model, folder_id)
     logger.debug(f"Определён URI модели: {model_uri}")
     
     payload = {
@@ -131,4 +220,23 @@ def generate_yandex_embeddings_response(text: str, model: str, yandex_api_key: s
     }
     
     logger.info("Формирование запроса завершено, отправка запроса в Yandex GPT.")
-    return send_request_safety(payload, yandex_api_key)
+    
+    return await _send_request_safety(payload, yandex_api_key)
+
+def _get_completions_model_uri(model: str, folder_id: str) -> str:
+    if model == "gpt-4o":
+        return f"gpt://{folder_id}/yandexgpt/latest"
+    elif model == "gpt-4o-mini":
+        return f"gpt://{folder_id}/yandexgpt-lite/latest"
+    elif model.startswith(("gpt://", "ds://")):
+        return model
+    else:
+        return f"gpt://{folder_id}/{model}"
+    
+def _get_embedding_model_uri(model: str, folder_id: str) -> str:
+    if model in ["text-embedding-3-large", "text-embedding-3-small"]:
+        return f"emb://{folder_id}/text-search-doc/latest"
+    elif model.startswith(("emb://", "ds://")):
+        return model
+    else:
+        return f"emb://{folder_id}/{model}"

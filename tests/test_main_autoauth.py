@@ -2,10 +2,13 @@ import pytest
 import openai
 import os
 import time
+from dotenv import load_dotenv
+
+load_dotenv()
 
 FOLDER_ID = os.getenv("FOLDER_ID", "")
 API_KEY = os.getenv("YANDEX_API_KEY", "")
-PROXY_URL = "http://localhost:8000"
+PROXY_URL = "http://localhost:9041"
 
 system_prompt = "Answer with only one word to my question"
 user_prompt = "What is the meaning of life?"
