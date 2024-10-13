@@ -12,10 +12,12 @@ async def generate_yandexgpt_stream_response(messages, model: str, temperature: 
         'x-folder-id': folder_id
     }
     
+    logger.debug("Начинаем преобразование сообщений в формат Yandex GPT.")
     # Преобразование сообщений в формат Yandex GPT
     for message in messages:
         message['text'] = message.get('content')
         message.pop('content', None)  # Удаление поля 'content', если оно существует
+        logger.debug(f"Преобразовано сообщение: {message}")
 
     model_uri = _get_completions_model_uri(model, folder_id)
     logger.debug(f"Определён URI модели: {model_uri}")
@@ -35,8 +37,15 @@ async def generate_yandexgpt_stream_response(messages, model: str, temperature: 
     generated_len = 0
     finished = False
     
+    logger.info("Отправка запроса в Yandex GPT...")
     async with httpx.AsyncClient() as client:
         response = await client.post(url, headers=headers, json=payload, timeout=15)
+        logger.debug(f"Ответ от Yandex GPT получен с кодом статуса: {response.status_code}")
+        
+        if response.status_code != 200:
+            logger.error(f"Ошибка при отправке запроса: {response.text}")
+            return
+        
         async for line in response.aiter_lines():
             if line:
                 logger.debug(f"Полученная строка: {line}")
@@ -73,9 +82,11 @@ async def generate_yandexgpt_stream_response(messages, model: str, temperature: 
 
                 if response_obj.alternatives[0].status == "ALTERNATIVE_STATUS_COMPLETE":
                     finished = True
+                    logger.info("Получен полный ответ от Yandex GPT.")
                     break
 
     if finished:
+        logger.info("Завершение передачи данных.")
         yield "data: [DONE]\n\n"
 
                     
@@ -234,7 +245,7 @@ def _get_completions_model_uri(model: str, folder_id: str) -> str:
         return f"gpt://{folder_id}/{model}"
     
 def _get_embedding_model_uri(model: str, folder_id: str) -> str:
-    if model in ["text-embedding-3-large", "text-embedding-3-small"]:
+    if model in ["text-embedding-3-large", "text-embedding-3-small", "text-embedding-ada-002"]:
         return f"emb://{folder_id}/text-search-doc/latest"
     elif model.startswith(("emb://", "ds://")):
         return model

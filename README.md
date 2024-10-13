@@ -83,8 +83,7 @@ client.embeddings.create(input = ['В каком году был основан 
 Если вы ограничены в выборе моделей, но можете указать хотя-бы api-ключ и base_url, то можете обращаться к моделям OpenAI - запросы будут мапиться на модели YandexGPT:
 - gpt-4o -> yandexgpt/latest
 - gpt-4o-mini -> yandexgpt-lite/latest
-- text-embedding-3-large -> text-search-doc/latest
-- text-embedding-3-small -> text-search-doc/latest
+- text-embedding-3-large, text-embedding-3-small, text-embedding-ada-002 -> text-search-doc/latest
 
 ### Планы
 
@@ -98,7 +97,7 @@ client.embeddings.create(input = ['В каком году был основан 
 
 ## Деплой
 
-### Коммунальныые трансляторы (без деплоя)
+### Коммунальные трансляторы (без деплоя)
 
 1. **Yandex Cloud**, `ru-central1-a`. Stateless режим, запросы не логируются. https://apps.llmplay.space/translator Status: ![Yandex Offline](https://apps.llmplay.space/translator/badge)
 
@@ -109,7 +108,8 @@ client.embeddings.create(input = ['В каком году был основан 
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fall-mute%2Fyagpt2openai_translator)
 
-Для использования автоматической аутентификации, заполните `FOLDER_ID` & `YANDEX_API_KEY` на странице деплоя. Укажите `VERCEL=True`.
+- Укажите в переменных окружения `VERCEL=True`, function max duration 30 секунд в настройках проекта и сделайте редеплой.
+- Для использования автоматической аутентификации, заполните `FOLDER_ID` & `YANDEX_API_KEY` на странице деплоя.
 
 ### Локальный/облачный запуск
 
