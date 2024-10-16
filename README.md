@@ -119,7 +119,7 @@ client.embeddings.create(input = ['В каком году был основан 
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fall-mute%2Fyagpt2openai_translator)
 
-- Укажите в переменных окружения `VERCEL=True`, function max duration 30 секунд в настройках проекта и сделайте редеплой.
+- Укажите в переменных окружения `VERCEL=True`, function max duration 60 секунд в настройках проекта и сделайте редеплой.
 - Для использования автоматической аутентификации, заполните `FOLDER_ID` & `YANDEX_API_KEY` на странице деплоя.
 
 ### Локальный/облачный запуск
