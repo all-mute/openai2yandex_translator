@@ -6,6 +6,7 @@ from app.models import CompletionResponse, TextEmbeddingResponse
 import os, sys, time, json
 from loguru import logger
 from dotenv import load_dotenv
+import asyncio
 
 load_dotenv()
 
@@ -18,6 +19,11 @@ with open('config.json', 'r') as f:
 
 # Загрузка ключей для автоавторизации
 autoauth_keys = tuple(config.get("autoauth_keys", []))
+
+# Настройка для батч-обработки эмбеддингов
+embeddings_retry_num = config.get("embeddings_retry_num", 3)
+s_embeddings_delays = config.get("s_embeddings_delays", [0.050, 0.500, 3])
+embeddings_batch_size = config.get("embeddings_batch_size", 5)
 
 # Уровень логирования
 LOG_LEVEL = config.get("log_level", "INFO")
@@ -137,28 +143,44 @@ async def embeddings(request: Request):
         
         body = await request.json()
         model = body.get("model")
-        input_data = body.get("input", [None])[0]  # Обработка случая, если input отсутствует
-        logger.debug(f"Полученные данные: model={model}, input_data={input_data}")
+        input_data = body.get("input", [None])  # Обработка случая, если input отсутствует
+        logger.debug(f"Полученные данные: model={model}, input_data={input_data}, len(input_data)={len(input_data)}")
         logger.info(f"Используемая модель: {model}")
         
-        yandex_vector, yandex_error = await generate_yandex_embeddings_response(input_data, model, yandex_api_key, folder_id)
+        if len(input_data) > 100:
+            logger.warning(f"Enormous len(input_data) > 100: len={len(input_data)}")
+        
+        """if len(input_data) == 1:
+            input_data = input_data[0]
+            yandex_vector, yandex_error = await generate_yandex_embeddings_response(input_data, model, yandex_api_key, folder_id)
+            yandex_vectors = [yandex_vector]
+        else:
+            yandex_vectors, yandex_error = await generate_yandex_embeddings_response_batch(input_data, model, yandex_api_key, folder_id, embeddings_retry_num, embeddings_batch_size)"""
+        
+        yandex_vectors, yandex_error = await generate_yandex_embeddings_response_batch(input_data, model, yandex_api_key, folder_id, embeddings_retry_num, embeddings_batch_size)
         
         if yandex_error:
             logger.error(f"Ошибка при генерации эмбеддинга от Yandex GPT: {yandex_error}")
             return yandex_error
         
+        data_list = []
+        for i, item in enumerate(yandex_vectors):
+            data_list.append({
+                "object": "embedding",
+                "index": i,
+                "embedding": item.embedding,
+            })
+        
+        sumNumTokens = sum(int(item.numTokens) for item in yandex_vectors)
+        
         # Формирование ответа в формате OpenAI
         openai_format_response = {
             "object": "list",
-            "data": [{
-                "object": "embedding",
-                "index": 0,
-                "embedding": yandex_vector.embedding,
-            }],
-            "model": f"{model}-by-{yandex_vector.modelVersion}",
+            "data": data_list,
+            "model": f"{model}-by-{yandex_vectors[0].modelVersion}",
             "usage": {
-                "prompt_tokens": yandex_vector.numTokens,
-                "total_tokens": yandex_vector.numTokens
+                "prompt_tokens": sumNumTokens,
+                "total_tokens": sumNumTokens,
             }
         }
         
@@ -188,6 +210,54 @@ def liveness_probe():
 @app.get("/badge")
 def get_badge():
     return RedirectResponse("https://img.shields.io/badge/status-online-brightgreen.svg")
+
+async def generate_yandex_embeddings_response_batch(arr: list, model, yandex_api_key, folder_id, retry_num, batch_size: int):
+    logger.info(f"Начинаем обработку массива из {len(arr)} текстов с размером батча {batch_size}.")
+    
+    text_kv = [(index, text) for index, text in enumerate(arr)]
+    logger.debug(f"Преобразованный массив текстов: {text_kv}")
+    
+    batch_results = {}
+    
+    for i in range(0, len(text_kv), batch_size):
+        batch = text_kv[i:i + batch_size]
+        logger.debug(f"Обработка батча {i // batch_size + 1}: {batch}")
+        
+        tasks = [process_safely_one_embedding(index, text, model, yandex_api_key, folder_id, retry_num) for index, text in batch]
+        
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        logger.debug(f"Результаты обработки батча {i // batch_size + 1}: {results}")
+        
+        for j, yandex_vector, yandex_error in results:
+            if yandex_error is not None:
+                logger.error(f"Ошибка при обработке {j} текста {arr[j]}: {yandex_error}")
+                return None, yandex_error
+            else:
+                logger.debug(f"Успешно обработан текст {arr[j]} с индексом {j}.")
+                batch_results[j] = yandex_vector
+    
+    result_array = [None] * len(arr)
+    for index, vector in batch_results.items():
+        result_array[index] = vector
+    
+    logger.info("Обработка всех текстов завершена. Возвращаем массив векторов.")
+    return result_array, None
+    
+async def process_safely_one_embedding(index, input_data, model, yandex_api_key, folder_id, retry_num):
+    retries = 0
+    while retries < retry_num:
+        yandex_vector, yandex_error = await generate_yandex_embeddings_response(input_data, model, yandex_api_key, folder_id)
+        if yandex_error is None:
+            return index, yandex_vector, None
+        else:
+            
+            time.sleep(s_embeddings_delays[retries])
+            retries += 1
+            
+            logger.warning(f"Ошибка при обработке текста {input_data}: {yandex_error}. Попытка {retries}/{retry_num} после ожидания.")
+            if retries == retry_num:
+                logger.error(f"Все попытки завершились неудачей для текста {input_data}.")
+                return index, None, yandex_error
 
 
 if __name__ == "__main__":

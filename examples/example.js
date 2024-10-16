@@ -45,6 +45,14 @@ async function getEmbedding(text, model = "text-search-doc/latest") {
     });
     return response.data[0].embedding; // Возвращаем эмбеддинг
 }
+
+async function getEmbeddingSyncBatch(texts, model = "text-search-doc/latest") {
+  const response = await openai.embeddings.create({
+    input: texts,
+    model: model,
+  });
+  return response.data; // Возвращаем эмбеддинг
+}
   
 
 async function main() {

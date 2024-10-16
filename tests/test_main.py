@@ -97,6 +97,20 @@ def test_embeddings_with_alternative_model(text, model):
     vector = response.data[0].embedding
     assert len(vector) > 0 and isinstance(vector, list)
     assert isinstance(vector[0], float)
+    
+@pytest.mark.parametrize("text, model", [
+    (emb_prompt, "text-search-doc/latest"),
+    (emb_prompt, "text-search-query/latest")
+])
+def test_embeddings_batch_with_alternative_model(text, model):
+    n = 100
+    response = oai.embeddings.create(input = [text] * n, model=model)
+    
+    assert len(response.data) == n
+    
+    vector = response.data[0].embedding
+    assert len(vector) > 0 and isinstance(vector, list)
+    assert isinstance(vector[0], float)
 
 @pytest.mark.parametrize("key", [
     "sk-my",
