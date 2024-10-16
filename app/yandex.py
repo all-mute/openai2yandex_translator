@@ -234,6 +234,9 @@ async def generate_yandex_embeddings_response(text: str, model: str, yandex_api_
     
     return await _send_request_safety(payload, yandex_api_key)
 
+
+    
+
 def _get_completions_model_uri(model: str, folder_id: str) -> str:
     if model == "gpt-4o":
         return f"gpt://{folder_id}/yandexgpt/latest"
@@ -251,3 +254,4 @@ def _get_embedding_model_uri(model: str, folder_id: str) -> str:
         return model
     else:
         return f"emb://{folder_id}/{model}"
+    

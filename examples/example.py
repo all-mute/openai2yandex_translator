@@ -37,6 +37,9 @@ def generate_text_oai(system_prompt, user_prompt, max_tokens=2000, temperature=0
 def get_embedding(text, model=f"text-search-doc/latest"):
    return oai.embeddings.create(input = [text], model=model).data[0].embedding
 
+def get_embedding_sync_batch(texts, model=f"text-search-doc/latest"):
+   return oai.embeddings.create(input = texts, model=model).data
+
 if __name__ == "__main__":
     # Поддерживаемые форматы моделей
     model = 'yandexgpt/latest'
