@@ -25,6 +25,8 @@ embeddings_retry_num = config.get("embeddings_retry_num", 3)
 s_embeddings_delays = config.get("s_embeddings_delays", [0.050, 0.500, 3])
 embeddings_batch_size = config.get("embeddings_batch_size", 5)
 
+app_version = config.get("app_version", "unknown")
+
 # Уровень логирования
 LOG_LEVEL = config.get("log_level", "INFO")
 
@@ -211,6 +213,10 @@ def liveness_probe():
 def get_badge():
     return RedirectResponse("https://img.shields.io/badge/status-online-brightgreen.svg")
 
+@app.get("/version")
+def version():
+    return {"version": app_version}
+
 async def generate_yandex_embeddings_response_batch(arr: list, model, yandex_api_key, folder_id, retry_num, batch_size: int):
     logger.info(f"Начинаем обработку массива из {len(arr)} текстов с размером батча {batch_size}.")
     
@@ -228,13 +234,19 @@ async def generate_yandex_embeddings_response_batch(arr: list, model, yandex_api
         results = await asyncio.gather(*tasks, return_exceptions=True)
         logger.debug(f"Результаты обработки батча {i // batch_size + 1}: {results}")
         
-        for j, yandex_vector, yandex_error in results:
-            if yandex_error is not None:
-                logger.error(f"Ошибка при обработке {j} текста {arr[j]}: {yandex_error}")
-                return None, yandex_error
+        for k, result in enumerate(results):
+            if isinstance(result, Exception):
+                logger.error(f"Ошибка при обработке {k} текста {arr[k]}: {result}")
+                return None, str(result)  # Возврат ошибки как строки
             else:
-                logger.debug(f"Успешно обработан текст {arr[j]} с индексом {j}.")
-                batch_results[j] = yandex_vector
+                j, yandex_vector, yandex_error = result
+                
+                if yandex_error is not None:
+                    logger.error(f"Ошибка при обработке {j} текста {arr[j]}: {yandex_error}")
+                    return None, yandex_error
+                else:
+                    logger.debug(f"Успешно обработан текст {arr[j]} с индексом {j}.")
+                    batch_results[j] = yandex_vector
     
     result_array = [None] * len(arr)
     for index, vector in batch_results.items():
@@ -261,4 +273,4 @@ async def process_safely_one_embedding(index, input_data, model, yandex_api_key,
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=9041, reload=True, log_level="debug")
+    uvicorn.run("main:app", host="0.0.0.0", port=9041, reload=True, log_level="info")

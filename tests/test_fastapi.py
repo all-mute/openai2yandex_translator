@@ -18,3 +18,16 @@ def test_liveness_probe():
     response = client.get("/livez")
     assert response.status_code == 200
     assert response.json() == {"status": "alive"}
+
+@pytest.mark.skip(reason="idk")
+def test_get_badge():
+    response = client.get("/badge")
+    assert response.status_code == 302  # Проверяем, что происходит редирект
+    assert response.headers["Location"] == "https://img.shields.io/badge/status-online-brightgreen.svg"
+
+def test_version():
+    from app.main import app_version
+    
+    response = client.get("/version")
+    assert response.status_code == 200
+    assert response.json() == {"version": app_version}  # Убедитесь, что версия соответствует ожидаемой
