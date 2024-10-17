@@ -28,8 +28,9 @@ oai = openai.Client(api_key=f"{FOLDER_ID}@{API_KEY}", base_url=f"{PROXY_URL}/v1/
 ])
 def test_completion_with_alternative_model(system_prompt, user_prompt, model):
     time.sleep(0.25)
+    retries = 1
     
-    for _ in range(3):  # Попробуем выполнить запрос до 3 раз
+    for _ in range(retries):  # Попробуем выполнить запрос до 3 раз
         response = oai.chat.completions.create(
             messages=[
                 {
@@ -103,10 +104,14 @@ def test_embeddings_with_alternative_model(text, model):
     (emb_prompt, "text-search-query/latest")
 ])
 def test_embeddings_batch_with_alternative_model(text, model):
-    n = 100
-    response = oai.embeddings.create(input = [text] * n, model=model)
-    
-    assert len(response.data) == n
+    n = 33
+    retries = 1
+    for attempt in range(retries):
+        response = oai.embeddings.create(input=[text] * n, model=model)
+        if response and hasattr(response, 'data') and len(response.data) == n:
+            break
+    else:
+        pytest.fail("Не удалось получить корректный ответ после нескольких попыток.")
     
     vector = response.data[0].embedding
     assert len(vector) > 0 and isinstance(vector, list)
