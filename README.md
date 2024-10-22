@@ -5,6 +5,10 @@
 ![Test Status](https://github.com/all-mute/openai2yandex_translator/actions/workflows/python-app.yml/badge.svg)
 ![Vercel](https://vercelbadge.vercel.app/api/all-mute/openai2yandex_translator)
 
+Это лаконичное fastapi приложение (прокси), которое транслирует запросы OpenAI<->Yandex Cloud Foundational Models, чтобы сервисы Yandex Cloud можно было использовать в сторонних фреймворках через OpenAI SDK. 
+
+<img src="promo.svg" alt="Promo Image" />
+
 - [Функционал](#функционал)
     - [Поддерживаемые модели](#поддерживаемые-модели)
     - [Аутентификация](#аутентификация)
@@ -18,13 +22,12 @@
     - [Проверка работы](#проверка-работы)
 - [Решение проблем](#решение-проблем)
 
-
-Это лаконичное fastapi приложение (прокси), которое транслирует запросы OpenAI<->Yandex Cloud Foundational Models, чтобы сервисы Yandex Cloud можно было использовать в сторонних фреймворках через OpenAI SDK. 
-
-Например:
+Быстрый старт:
 
 ```python
 import openai
+
+proxy_url = "https://openai2yandex-translator.vercel.app"
 
 # С аутентификацией запроса
 client = openai.Client(api_key=f"{FOLDER_ID}@{API_KEY_OR_IAM_KEY}", base_url=f"{proxy_url}/v1/")
@@ -156,3 +159,4 @@ curl -X POST <PROXY_URL>/v1/chat/completions \
 
 * Чтобы ходить в дообученную gpt, пользователь/сервисный аккаунт должны быть участниками проекта DataShpere с ролью `developer`
 * При деплое через serverless платформы (vervel, yc functions) не забудьте выставить timeout 60 секунд
+* Ошибка 429: проблема на стороне облака. Мы фиксим данную проблему, но пока рекомендуется отправлять запросы с ретраями.
