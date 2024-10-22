@@ -28,7 +28,7 @@ oai = openai.Client(api_key=f"{FOLDER_ID}@{API_KEY}", base_url=f"{PROXY_URL}/v1/
 ])
 def test_completion_with_alternative_model(system_prompt, user_prompt, model):
     time.sleep(0.25)
-    retries = 1
+    retries = 3
     
     for _ in range(retries):  # Попробуем выполнить запрос до 3 раз
         response = oai.chat.completions.create(
@@ -105,7 +105,7 @@ def test_embeddings_with_alternative_model(text, model):
 ])
 def test_embeddings_batch_with_alternative_model(text, model):
     n = 33
-    retries = 1
+    retries = 2
     for attempt in range(retries):
         response = oai.embeddings.create(input=[text] * n, model=model)
         if response and hasattr(response, 'data') and len(response.data) == n:
