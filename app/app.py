@@ -1,6 +1,6 @@
 from fastapi.responses import RedirectResponse, StreamingResponse
 import uvicorn
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request
 from app.yandex import generate_yandexgpt_response, generate_yandex_embeddings_response, generate_yandexgpt_stream_response
 from app.models import CompletionResponse, TextEmbeddingResponse
 import os, sys, time, json
@@ -27,22 +27,7 @@ embeddings_batch_size = config.get("embeddings_batch_size", 5)
 
 app_version = config.get("app_version", "unknown")
 
-# Уровень логирования
-LOG_LEVEL = config.get("log_level", "INFO")
-
-# Проверяем, запущено ли приложение на Vercel
-is_vercel = os.getenv("VERCEL", False)
-
-# Настраиваем логирование
-if is_vercel:
-    # Логи выводятся в консоль
-    logger.add(sys.stdout, format="{time} {level} {message}", level=LOG_LEVEL)
-else:
-    # Логи записываются в файл
-    logger.add("logs/debug.log", format="{time} {level} {message}", level=LOG_LEVEL, rotation="100 MB")
-
-
-app = FastAPI(logger=logger)
+app = APIRouter()
 
 # Получение переменных окружения
 FOLDER_ID = os.getenv("FOLDER_ID", "")
