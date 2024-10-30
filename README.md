@@ -105,6 +105,8 @@ client.embeddings.create(input = ['В каком году был основан 
 * ~~Error handling~~
 * ~~Стриминг~~
 * ~~Синхронные батчи эмбеддинг-модели (для langchain)~~
+* Поддержка function calling
+* Поддержка OS моделей
 * Добавить поддержку классификаторов
 * Добавить поддержку дообученных эмбеддингов
 * Добавить поддержку YandexART
@@ -133,7 +135,7 @@ client.embeddings.create(input = ['В каком году был основан 
 2. Запустите приложение:
     - `docker-compose up -d --build`. Приложение будет доступно по адресу 127.0.0.1:**9041**
     - или (команды аналогичны для `podman`) `docker build -t image_name .`, затем `docker run -d -p 127.0.0.1:9041:9041 --name container_name image_name` 
-    - или (для локального тестирования) `pip install -r requirements.txt`, затем `python app/main.py`
+    - или (для локального тестирования) `pip install -r requirements.txt`, затем `python main.py`
 
 Может быть полезно: [Запуск контейнерного приложения в Yandex Serverless Containers](https://yandex.cloud/ru/docs/tutorials/serverless/deploy-app-container)
 
