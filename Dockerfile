@@ -20,4 +20,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD curl --fail http://localhost:9041/health || exit 1
 
 # Команда для запуска приложения
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "9041"]
+CMD ["uvicorn", "main:main_app", "--host", "0.0.0.0", "--port", "9041"]

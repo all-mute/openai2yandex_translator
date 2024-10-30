@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from app.main import app  # Изменено на абсолютный импорт
+from app.app import app  # Изменено на абсолютный импорт
 
 client = TestClient(app)
 
@@ -26,7 +26,7 @@ def test_get_badge():
     assert response.headers["Location"] == "https://img.shields.io/badge/status-online-brightgreen.svg"
 
 def test_version():
-    from app.main import app_version
+    from app.app import app_version
     
     response = client.get("/version")
     assert response.status_code == 200
