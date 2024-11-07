@@ -80,7 +80,7 @@ async def completion(request: Request):
             openai_format_response = {
                 "id": "chatcmpl-42",
                 "object": "chat.completion",
-                "created": str(time.time()),
+                "created": int(time.time()),
                 "model": f"{model}-by-{yandex_response.modelVersion}",
                 "system_fingerprint": "42",
                 "choices": [{
