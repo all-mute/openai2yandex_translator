@@ -67,7 +67,7 @@ async def generate_yandexgpt_stream_response(messages, model: str, temperature: 
                     response_data = {
                         "id": "chatcmpl-42",  # Здесь можно использовать уникальный ID
                         "object": "chat.completion.chunk",
-                        "created": str(time.time()),
+                        "created": int(time.time()),
                         "model": "gpt-4o-mini-2024-07-18",
                         "system_fingerprint": "fp_e2bde53e6",
                         "choices": [
