@@ -1,1 +1,1 @@
-{"autoauth_keys": ["sk-my", " ", ""], "log_level": "INFO", "embeddings_retry_num": 5, "s_embeddings_delays": [0.050, 0.500, 0.500, 2, 2], "embeddings_batch_size": 5, "app_version": "0.0.4.1"}
+{"autoauth_keys": ["sk-my", " ", ""], "log_level": "INFO", "embeddings_retry_num": 5, "s_embeddings_delays": [0.050, 0.500, 0.500, 2, 2], "embeddings_batch_size": 5, "app_version": "0.4.1"}

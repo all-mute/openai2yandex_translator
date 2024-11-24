@@ -3,6 +3,7 @@ import time, json
 from fastapi import HTTPException
 from loguru import logger
 from app.models import CompletionResponse, TextEmbeddingResponse, CompletionRequest, TextEmbeddingRequest
+from app.metrics import increment_yandex_metric_counter
 
 async def generate_yandexgpt_stream_response(messages, model: str, temperature: float, max_tokens: int, yandex_api_key: str, folder_id: str):
     url = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
@@ -44,6 +45,7 @@ async def generate_yandexgpt_stream_response(messages, model: str, temperature: 
     finished = False
     
     logger.info("Отправка запроса в Yandex GPT...")
+    
     async with httpx.AsyncClient() as client:
         response = await client.post(url, headers=headers, json=payload, timeout=30)  # Увеличение таймаута
         logger.debug(f"Ответ от Yandex GPT получен с кодом статуса: {response.status_code}")
@@ -89,6 +91,8 @@ async def generate_yandexgpt_stream_response(messages, model: str, temperature: 
                 if response_obj.alternatives[0].status == "ALTERNATIVE_STATUS_COMPLETE":
                     finished = True
                     logger.info("Получен полный ответ от Yandex GPT.")
+                    await increment_yandex_metric_counter("yandexgpt_completions_requests", labels={"model": model})
+                    
                     break
 
     if finished:
@@ -138,6 +142,7 @@ async def generate_yandexgpt_response(messages, model: str, temperature: float, 
                 response_obj = CompletionResponse(**response.json()['result'])
                 
                 logger.info("Запрос успешно выполнен, получен ответ от Yandex GPT.")
+                await increment_yandex_metric_counter("yandexgpt_completions_requests", labels={"model": model})
                 
                 return response_obj, None
             
@@ -224,6 +229,7 @@ async def generate_yandex_embeddings_response(text: str, model: str, yandex_api_
 
             if response.status_code == 200:
                 logger.debug(f"Ответ от Yandex GPT: {response.json()}")
+                await increment_yandex_metric_counter("yandexgpt_embeddings_requests", labels={"model": model})
                 return TextEmbeddingResponse(**response.json()), None
             else:
                 logger.error(f"Ошибка при выполнении запроса: {response.text}, статус код: {response.status_code}")

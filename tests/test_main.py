@@ -12,7 +12,7 @@ PROXY_URL = "http://localhost:9041"
 system_prompt = "Answer with only one word to my question"
 user_prompt = "What is the meaning of life?"
 emb_prompt = "Hello Yandex!"
-ds_model_id = "bt12j06dfr7pmncjipab"
+ds_model_id = "bt120qtlha5a2aisl2ih"
 
 # Configure the OpenAI client to use the proxy server
 oai = openai.Client(api_key=f"{FOLDER_ID}@{API_KEY}", base_url=f"{PROXY_URL}/v1/")
