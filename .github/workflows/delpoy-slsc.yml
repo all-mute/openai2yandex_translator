@@ -49,7 +49,8 @@ jobs:
         public: true
 
         revision-log-options-disabled: true
-        revision-log-options-log-group-id: e239urj29boo302337co
+        revision-log-options-folder-id: b1gkvpmciuf1at2nkvcb
+        revision-log-options-min-level: debug
 
         revision-env: |
           GITHUB_SHA=${{ github.sha }}
