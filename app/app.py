@@ -25,8 +25,6 @@ embeddings_retry_num = config.get("embeddings_retry_num", 3)
 s_embeddings_delays = config.get("s_embeddings_delays", [0.050, 0.500, 3])
 embeddings_batch_size = config.get("embeddings_batch_size", 5)
 
-app_version = config.get("app_version", "unknown")
-
 app = APIRouter()
 
 # Получение переменных окружения
@@ -197,10 +195,6 @@ def liveness_probe():
 @app.get("/badge")
 def get_badge():
     return RedirectResponse("https://img.shields.io/badge/status-online-brightgreen.svg")
-
-@app.get("/version")
-def version():
-    return {"version": app_version}
 
 async def generate_yandex_embeddings_response_batch(arr: list, model, yandex_api_key, folder_id, retry_num, batch_size: int):
     logger.info(f"Начинаем обработку массива из {len(arr)} текстов с размером батча {batch_size}.")

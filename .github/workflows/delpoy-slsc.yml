@@ -24,6 +24,7 @@ jobs:
         CR_REGISTRY: crp0bmvdd91dv86c170d
         CR_REPOSITORY: my-cr-repo
         IMAGE_TAG: ${{ github.sha }}
+
       run: |
         ls -a
         docker build -t cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG -f YC-Dockerfile .
@@ -49,4 +50,8 @@ jobs:
 
         revision-log-options-disabled: true
         revision-log-options-log-group-id: e239urj29boo302337co
+
+        revision-env: |
+          GITHUB_SHA=${{ github.sha }}
+          GITHUB_REF=${{ github.ref }}
 
