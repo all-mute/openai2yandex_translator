@@ -26,10 +26,6 @@ jobs:
         IMAGE_TAG: ${{ github.sha }}
       run: |
         ls -a
-        cd ..
-        ls -a
-        cd ..
-        ls -a
         docker build -t cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG .
         docker push cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG
 
