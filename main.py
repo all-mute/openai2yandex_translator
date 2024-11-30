@@ -19,7 +19,7 @@ is_vercel = os.getenv("VERCEL", False)
 # Настраиваем логирование
 if is_vercel:
     # Логи выводятся в консоль
-    logger.add(sys.stdout, format="{time} {level} {message}", level=LOG_LEVEL)
+    logger.add(sys.stdout, serialize=True, level=LOG_LEVEL)
 else:
     # Логи записываются в файл
     logger.add("logs/debug.log", format="{time} {level} {message}", level=LOG_LEVEL, rotation="100 MB")
