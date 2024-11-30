@@ -48,6 +48,5 @@ jobs:
         public: true
 
         revision-log-options-disabled: true
-        revision-log-options-log-group-id: e239urj29boo302337co
-        revision-log-options-min-level: debug
+        revision-log-options-log-group-id: adapter-dev
 
