@@ -20,7 +20,7 @@ jobs:
 
     - name: Build, tag, and push image to Yandex Cloud Container Registry
       env:
-        CR_REGISTRY: crp00000000000000000
+        CR_REGISTRY: crp0bmvdd91dv86c170d
         CR_REPOSITORY: my-cr-repo
         IMAGE_TAG: ${{ github.sha }}
       run: |
@@ -33,12 +33,12 @@ jobs:
 
       with:
         yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
-        container-name: yc-action-demo
-        folder-id: bbajn5q2d74c********
-        revision-service-account-id: ajeqnasj95o7********
+        container-name: yc-action-demo-adapter
+        folder-id: b1gkvpmciuf1at2nkvcb
+        revision-service-account-id: ajefe21mrgju0alb550h
         revision-cores: 1
-        revision-memory: 512Mb
+        revision-memory: 256Mb
         revision-core-fraction: 100
         revision-concurrency: 8
-        revision-image-url: cr.yandex/crp00000000000000000/my-cr-repo:${{ github.sha }}
+        revision-image-url: cr.yandex/crp0bmvdd91dv86c170d/my-cr-repo:${{ github.sha }}
         revision-execution-timeout: 10
