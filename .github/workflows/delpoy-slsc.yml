@@ -6,11 +6,12 @@ on:
 
 jobs:
 
-  build:
+  delpoy-dev:
 
     runs-on: ubuntu-latest
 
     steps:
+    - uses: actions/checkout@v4
 
     - name: Login to Yandex Cloud Container Registry
       id: login-cr
@@ -27,12 +28,7 @@ jobs:
         ls -a
         cd ..
         ls -a
-        cd openai2yandex_api_adapter
-        ls -a
         cd ..
-        cd ..
-        ls -a
-        cd openai2yandex_api_adapter
         ls -a
         docker build -t cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG .
         docker push cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG
