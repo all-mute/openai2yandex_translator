@@ -4,18 +4,13 @@ from fastapi import APIRouter, HTTPException, Request
 from app.yandex import generate_yandexgpt_response, generate_yandex_embeddings_response, generate_yandexgpt_stream_response
 from app.models import CompletionResponse, TextEmbeddingResponse
 import os, sys, time, json
-#from loguru import logger
-from app.log_config import logger
+from app.my_logger import logger
 from dotenv import load_dotenv
 import asyncio
 
-#logger.remove()  # Удаляем стандартный обработчик
-#logger.add(app.log, serialize=True) 
-
-#logger.info("My log message", extra={"my-key": "my-value"})
-logger.info("My log message XXX")
-
 load_dotenv()
+
+logger.info("My log message XXXX")
 
 # 1. Если вы найдете scheme запроса к openai, пожалуйста, дайте знать tg @nongilgameshj
 # 2. Перед тем как придираться к отсутствию валидации и сериализации, пожалуйста, ответьте на вопрос: "А зачем оно в прокси?"

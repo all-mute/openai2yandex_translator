@@ -55,3 +55,6 @@ jobs:
           GITHUB_SHA=${{ github.sha }}
           GITHUB_REF=${{ github.ref }}
 
+          LOG_TYPE=yc
+          LOG_LEVEL=DEBUG
+

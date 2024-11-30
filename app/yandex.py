@@ -1,7 +1,7 @@
 import httpx
 import time, json
 from fastapi import HTTPException
-from loguru import logger
+from app.my_logger import logger
 from app.models import CompletionResponse, TextEmbeddingResponse, CompletionRequest, TextEmbeddingRequest
 from app.metrics import increment_yandex_metric_counter
 

@@ -1,5 +1,5 @@
 import httpx
-from loguru import logger
+from app.my_logger import logger
 import time
 from dotenv import load_dotenv
 import os
