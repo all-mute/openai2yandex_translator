@@ -28,7 +28,7 @@ jobs:
         cd ..
         ls -a
         cd openai2yandex_api_adapter
-        la -a
+        ls -a
         cd ..
         cd ..
         ls -a
