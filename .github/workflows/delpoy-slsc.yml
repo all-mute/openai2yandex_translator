@@ -47,10 +47,9 @@ jobs:
         revision-image-url: cr.yandex/crp0bmvdd91dv86c170d/my-cr-repo:${{ github.sha }}
         revision-execution-timeout: 120
         public: true
-
-        revision-log-options-disabled: true
-        revision-log-options-folder-id: b1gkvpmciuf1at2nkvcb
-        revision-log-options-min-level: debug
+        
+        revision-log-options-log-group-id: e239urj29boo302337co
+        revision-log-options-min-level: level_unspecified
 
         revision-env: |
           GITHUB_SHA=${{ github.sha }}
