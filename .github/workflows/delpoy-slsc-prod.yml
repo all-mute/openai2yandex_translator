@@ -2,7 +2,7 @@ name: Deploy Serverless Container to Yandex Cloud
 
 on:
   push:
-    branches: [ "dev" ]
+    branches: [ "main" ]
 
 jobs:
 
@@ -21,8 +21,8 @@ jobs:
 
     - name: Build, tag, and push image to Yandex Cloud Container Registry
       env:
-        CR_REGISTRY: crp0bmvdd91dv86c170d
-        CR_REPOSITORY: my-cr-repo
+        CR_REGISTRY: crppsup4msn8hhtat156
+        CR_REPOSITORY: my-repo-prod
         IMAGE_TAG: ${{ github.sha }}
       run: |
         ls -a
@@ -35,7 +35,7 @@ jobs:
 
       with:
         yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
-        container-name: adapter-0
+        container-name: adapter-0-prod
         folder-id: b1gkvpmciuf1at2nkvcb
         revision-service-account-id: ajefe21mrgju0alb550h
         revision-cores: 1
@@ -43,12 +43,12 @@ jobs:
         revision-core-fraction: 100
         revision-concurrency: 1
         revision-provisioned: 1
-        revision-image-url: cr.yandex/crp0bmvdd91dv86c170d/my-cr-repo:${{ github.sha }}
+        revision-image-url: cr.yandex/crppsup4msn8hhtat156/my-repo-prod:${{ github.sha }}
         revision-execution-timeout: 120
         public: true
 
         revision-log-options-disabled: true
-        revision-log-options-log-group-id: e239urj29boo302337co
+        revision-log-options-log-group-id: e23p2mbdc5gis4an2ess
         revision-log-options-folder-id: b1gkvpmciuf1at2nkvcb
-        revision-log-options-min-level: debug
+        revision-log-options-min-level: info
         
