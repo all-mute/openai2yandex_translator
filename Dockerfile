@@ -14,6 +14,8 @@ EXPOSE 9041
 
 ENV FOLDER_ID=""
 ENV YANDEX_API_KEY=""
+ENV VERCEL=False
+ENV USE_YANDEX_METRICS=False
 
 # healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \

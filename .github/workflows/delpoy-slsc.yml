@@ -24,6 +24,7 @@ jobs:
         CR_REPOSITORY: my-cr-repo
         IMAGE_TAG: ${{ github.sha }}
       run: |
+        ls -a
         docker build -t cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG .
         docker push cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG
 
@@ -33,12 +34,13 @@ jobs:
 
       with:
         yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
-        container-name: yc-action-demo-adapter
+        container-name: adapter-0
         folder-id: b1gkvpmciuf1at2nkvcb
         revision-service-account-id: ajefe21mrgju0alb550h
         revision-cores: 1
-        revision-memory: 256Mb
+        revision-memory: 128Mb
         revision-core-fraction: 100
         revision-concurrency: 8
         revision-image-url: cr.yandex/crp0bmvdd91dv86c170d/my-cr-repo:${{ github.sha }}
-        revision-execution-timeout: 10
+        revision-execution-timeout: 60
+        public: true
