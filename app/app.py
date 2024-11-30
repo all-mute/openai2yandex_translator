@@ -35,7 +35,7 @@ YANDEX_API_KEY = os.getenv("YANDEX_API_KEY", "")
 
 @app.post("/v1/chat/completions")
 async def completion(request: Request):
-    logger.info("Обработка запроса на генерацию ответа.")
+    logger.info("Обработка запроса на генерацию ответа.", extra={"my-key": "my-value"})
     logger.debug(f"Запрос: {request.method} {request.url}")
     logger.debug(f"Заголовки: {request.headers}")
     logger.debug(f"Тело запроса: {await request.json()}")

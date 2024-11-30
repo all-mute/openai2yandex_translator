@@ -1,5 +1,4 @@
 from fastapi import FastAPI
-from app.yc_log_handler import ycLogHandler
 from app.app import app
 import os, sys, json
 from dotenv import load_dotenv
