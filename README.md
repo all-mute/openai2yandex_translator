@@ -67,7 +67,7 @@ client.chat.completions.create(
 client.embeddings.create(input = ['В каком году был основан Яндекс?'], model='text-search-doc/latest').data[0].embedding # или model=f'emb://{FOLDER_ID}/text-search-doc/latest'
 ```
 
-Подробные примеры содержатся в файлах [example.py](examples/example.py) и [example.js](examples/example.js).
+Подробные примеры содержатся в файлах [example.py](examples/example.py), [langchain-example.py](examples/langchain-example.py) и [example.js](examples/example.js).
 
 ### Поддерживаемые модели:
 
