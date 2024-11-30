@@ -37,7 +37,7 @@ jobs:
         yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
         container-name: adapter-0-prod
         folder-id: b1gkvpmciuf1at2nkvcb
-        revision-service-account-id: ajefe21mrgju0alb550h
+        revision-service-account-id: ajekbtndj8s14af74itc
         revision-cores: 1
         revision-memory: 128Mb
         revision-core-fraction: 100
