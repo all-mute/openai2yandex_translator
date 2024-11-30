@@ -49,6 +49,5 @@ jobs:
 
         revision-log-options-disabled: true
         revision-log-options-log-group-id: e23p2mbdc5gis4an2ess
-        revision-log-options-folder-id: b1gkvpmciuf1at2nkvcb
         revision-log-options-min-level: info
         
