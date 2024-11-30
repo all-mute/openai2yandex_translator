@@ -48,6 +48,6 @@ jobs:
         public: true
 
         revision-log-options-disabled: true
-        revision-log-options-log-group-id: adapter-prod
+        revision-log-options-log-group-id: e23p2mbdc5gis4an2ess
         revision-log-options-min-level: info
         
