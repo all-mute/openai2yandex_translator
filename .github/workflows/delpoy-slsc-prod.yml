@@ -1,4 +1,4 @@
-name: Deploy Serverless Container to Yandex Cloud
+name: Deploy Serverless Container to Yandex Cloud (prod-latest)
 
 on:
   push:
@@ -24,6 +24,7 @@ jobs:
         CR_REGISTRY: crppsup4msn8hhtat156
         CR_REPOSITORY: my-repo-prod
         IMAGE_TAG: ${{ github.sha }}
+
       run: |
         ls -a
         docker build -t cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG -f YC-Dockerfile .
@@ -46,8 +47,14 @@ jobs:
         revision-image-url: cr.yandex/crppsup4msn8hhtat156/my-repo-prod:${{ github.sha }}
         revision-execution-timeout: 120
         public: true
-
-        revision-log-options-disabled: true
-        revision-log-options-log-group-id: e23p2mbdc5gis4an2ess
-        revision-log-options-min-level: info
         
+        revision-log-options-log-group-id: e23p2mbdc5gis4an2ess
+        revision-log-options-min-level: level_unspecified
+
+        revision-env: |
+          GITHUB_SHA=${{ github.sha }}
+          GITHUB_REF=${{ github.ref }}
+
+          LOG_TYPE=yc
+          LOG_LEVEL=INFO
+
