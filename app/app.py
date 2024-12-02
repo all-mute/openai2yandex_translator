@@ -1,7 +1,7 @@
 from fastapi.responses import RedirectResponse, StreamingResponse
 import uvicorn
 from fastapi import APIRouter, HTTPException, Request
-from app.yandex import generate_yandexgpt_response, generate_yandex_embeddings_response, generate_yandexgpt_stream_response
+from app.yandex import generate_yandexgpt_response, generate_yandex_embeddings_response, generate_yandexgpt_stream_response, _adapt_message_for_openai
 from app.models import CompletionResponse, TextEmbeddingResponse
 import os, sys, time, json
 from app.my_logger import logger
@@ -10,10 +10,7 @@ import asyncio
 
 load_dotenv()
 
-logger.info("My log message XXXX")
-
-# 1. Если вы найдете scheme запроса к openai, пожалуйста, дайте знать tg @nongilgameshj
-# 2. Перед тем как придираться к отсутствию валидации и сериализации, пожалуйста, ответьте на вопрос: "А зачем оно в прокси?"
+logger.info("App module initiated.")
 
 # Загрузка конфига
 with open('config.json', 'r') as f:
@@ -60,46 +57,24 @@ async def completion(request: Request):
         max_tokens = body.get("max_tokens", 2048)
         temperature = body.get("temperature", 0.3)
         messages = body.get("messages", [])
+        tools = body.get("tools", None)
         stream = body.get("stream", False)
         
-        logger.debug(f"Полученные данные: model={model}, max_tokens={max_tokens}, temperature={temperature}, messages={messages}, stream={stream}")
+        logger.debug(f"Полученные данные: model={model}, max_tokens={max_tokens}, temperature={temperature}, messages={messages}, tools={tools}, stream={stream}")
         logger.info(f"Используемая модель: {model}")
         
         # Генерация ответа от Yandex GPT
         if stream:
             
-            return StreamingResponse(generate_yandexgpt_stream_response(messages, model, temperature, max_tokens, yandex_api_key, folder_id), media_type="text/event-stream")
+            return StreamingResponse(generate_yandexgpt_stream_response(messages, tools, model, temperature, max_tokens, yandex_api_key, folder_id), media_type="text/event-stream")
         else:
-            yandex_response, yandex_error = await generate_yandexgpt_response(messages, model, temperature, max_tokens, yandex_api_key, folder_id)
+            yandex_response, yandex_error = await generate_yandexgpt_response(messages, tools, model, temperature, max_tokens, yandex_api_key, folder_id)
         
             if yandex_error:
                 logger.error(f"Ошибка при генерации ответа от Yandex GPT: {yandex_error}")
                 return yandex_error
             
-            # Формирование ответа в формате OpenAI
-            openai_format_response = {
-                "id": "chatcmpl-42",
-                "object": "chat.completion",
-                "created": int(time.time()),
-                "model": f"{model}-by-{yandex_response.modelVersion}",
-                "system_fingerprint": "42",
-                "choices": [{
-                    "index": 0,
-                    "message": {
-                        "role": "assistant",
-                        "content": yandex_response.alternatives[0].message.text,
-                    },
-                    "logprobs": None,
-                    "finish_reason": "stop"
-                }],
-                "usage": {
-                    "prompt_tokens": yandex_response.usage.inputTextTokens,
-                    "completion_tokens": yandex_response.usage.completionTokens,
-                    "total_tokens": yandex_response.usage.totalTokens
-                }
-            }
-        
-            logger.debug("Формирование ответа в формате OpenAI завершено.")
+            openai_format_response = _adapt_message_for_openai(yandex_response, model)
             return openai_format_response
         
     except HTTPException as e:

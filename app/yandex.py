@@ -1,11 +1,14 @@
+import string
 import httpx
 import time, json
 from fastapi import HTTPException
 from app.my_logger import logger
 from app.models import CompletionResponse, TextEmbeddingResponse, CompletionRequest, TextEmbeddingRequest
 from app.metrics import increment_yandex_metric_counter
+import random
+from collections import defaultdict, deque
 
-async def generate_yandexgpt_stream_response(messages, model: str, temperature: float, max_tokens: int, yandex_api_key: str, folder_id: str):
+async def generate_yandexgpt_stream_response(messages, tools, model: str, temperature: float, max_tokens: int, yandex_api_key: str, folder_id: str):
     url = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
     headers = {
         "Content-Type": "application/json",
@@ -14,21 +17,14 @@ async def generate_yandexgpt_stream_response(messages, model: str, temperature: 
     }
     
     logger.debug("Начинаем преобразование сообщений в формат Yandex GPT.")
-    # Преобразование сообщений в формат Yandex GPT
-    for message in messages:
-        content = message.get('content')
-        
-        # EXPERIMENTAL
-        if not isinstance(content, str):
-            content = str(content)
             
-        message['text'] = content
-        message.pop('content', None)  # Удаление поля 'content', если оно существует
-        logger.debug(f"Преобразовано сообщение: {message}")
+    messages_transformed, called_functions = _adapt_messages_for_yandexgpt(messages, tools)
 
+    # Определение URI модели
     model_uri = _get_completions_model_uri(model, folder_id)
     logger.debug(f"Определён URI модели: {model_uri}")
     
+    # Формирование запроса
     payload = {
         "modelUri": model_uri,
         "completionOptions": {
@@ -36,7 +32,8 @@ async def generate_yandexgpt_stream_response(messages, model: str, temperature: 
             "temperature": temperature,
             "maxTokens": max_tokens
         },
-        "messages": messages
+        "messages": messages_transformed,
+        "tools": tools
     }
     
     logger.info("Формирование запроса завершено, отправка запроса в Yandex GPT.")
@@ -57,8 +54,20 @@ async def generate_yandexgpt_stream_response(messages, model: str, temperature: 
         async for line in response.aiter_lines():
             if line:
                 logger.debug(f"Полученная строка: {line}")
-                json_line = json.loads(line)  # Преобразование строки в JSON
+                json_line = json.loads(line)  # Преобразование ��троки в JSON
                 
+                if json_line['result']['alternatives'][0]['status'] == "ALTERNATIVE_STATUS_TOOL_CALLS":
+                    logger.debug("Получен инструмент!")
+                    response_obj = CompletionResponse(**json_line['result'])
+                    logger.debug(f"Преобразованный объект: {response_obj}")
+                    
+                    response_data = _adapt_message_for_openai_stream_tool_calls(response_obj, model)
+                    
+                    yield f"data: {json.dumps(response_data, ensure_ascii=False)}\n\n"
+                    
+                    finished = True
+                    break
+                    
                 if 'result' in json_line:
                     response_obj = CompletionResponse(**json_line['result'])
                     logger.debug(f"Преобразованный объект: {response_obj}")
@@ -101,7 +110,7 @@ async def generate_yandexgpt_stream_response(messages, model: str, temperature: 
 
                     
 
-async def generate_yandexgpt_response(messages, model: str, temperature: float, max_tokens: int, yandex_api_key: str, folder_id: str) -> tuple[CompletionResponse, None] | tuple[None, dict]:
+async def generate_yandexgpt_response(messages, tools, model: str, temperature: float, max_tokens: int, yandex_api_key: str, folder_id: str) -> tuple[CompletionResponse, None] | tuple[None, dict]:
     """
     Генерация ответа от Yandex GPT.
 
@@ -119,7 +128,7 @@ async def generate_yandexgpt_response(messages, model: str, temperature: float, 
         """
         Отправка запроса в Yandex GPT с обработкой ошибок.
 
-        :param payload: Данные запроса.
+        :param payload: Данные з��проса.
         :param api_key: API ключ для авторизации.
         :return: Ответ от Yandex GPT или ошибка.
         """
@@ -160,18 +169,8 @@ async def generate_yandexgpt_response(messages, model: str, temperature: float, 
         except httpx.ReadTimeout:
             logger.error("Таймаут чтения: запрос не завершился вовремя.")
             return None, {"error": "Таймаут чтения: запрос не завершился вовремя."}
-    
-    # Преобразование сообщений в формат Yandex GPT
-    for message in messages:
-        # Извлечение текста из поля 'content' и замена его на 'text'
-        content = message.get('content')
-        
-        # EXPERIMENTAL
-        if not isinstance(content, str):
-            content = str(content)
             
-        message['text'] = content
-        message.pop('content')  # Удаление поля 'content', если оно существует
+    messages_transformed, called_functions = _adapt_messages_for_yandexgpt(messages, tools)
 
     # Определение URI модели
     model_uri = _get_completions_model_uri(model, folder_id)
@@ -185,7 +184,8 @@ async def generate_yandexgpt_response(messages, model: str, temperature: float, 
             "temperature": temperature,
             "maxTokens": max_tokens
         },
-        "messages": messages
+        "messages": messages_transformed,
+        "tools": tools
     }
     
     logger.info("Формирование запроса завершено, отправка запроса в Yandex GPT.")
@@ -275,5 +275,180 @@ def _get_embedding_model_uri(model: str, folder_id: str) -> str:
     else:
         return f"emb://{folder_id}/{model}"
     
+def _adapt_messages_for_yandexgpt(messages: list[dict], tools: list[dict] | None = None) -> tuple[list[dict], dict]:
+    logger.debug(f"Начало преобразования сообщений в формат Yandex GPT. Сообщения: {messages}, инструменты: {tools}")
+    messages_transformed = []
+    
+    # TODO, WORKAROUND
+    # Создаем defaultdict, где каждый элемент - это deque
+    called_functions = {}
+    
+    i = -1
+    while i + 1 < len(messages):
+        i += 1
+        message = messages[i]
+        # если tool, преобразовать в assistant с toolResultList
+        # если ассистент с tool_calls/function_call, преобразовать в assistant с toolCallList
+        # во всех остальных случаях только контент на текст поменять
+        
+        if message.get('role') == 'tool':
+            name = called_functions.get(message.get('tool_call_id'))
+            toolResults = [
+                    {"functionResult": {
+                        "name": name,
+                        "result": message.get('content')
+                    }}
+                ]
+            
+            while i + 1 < len(messages) and messages[i + 1].get('role') == 'tool':
+                i += 1
+                message = messages[i]
+
+                name = called_functions.get(message.get('tool_call_id'))
+                toolResults.append({
+                    "functionResult": {
+                        "name": name,
+                        "result": message.get('content')
+                    }
+                })
+            
+            messages_transformed.append({
+                "role": "assistant",
+                "toolResultList": {
+                    "toolResults": toolResults
+                }
+            })
+        elif message.get('role') == 'assistant' and message.get('tool_calls'):
+            # внутри tool_calls список с  лежит id, type, function(name, arguments)
+            toolCalls = []
+            for tool_call in message.get('tool_calls'):
+                try: 
+                    name = tool_call.get('function').get('name')
+                    arguments = json.loads(tool_call.get('function').get('arguments'))
+                except:
+                    logger.error(f"Ошибка при извлечении name и arguments из tool_call: {tool_call}")
+                    continue
+                toolCalls.append({
+                    "functionCall": {
+                        "name": name,
+                        "arguments": arguments
+                    }
+                })
+                called_functions[tool_call.get('id')] = name
+                
+                
+            messages_transformed.append({
+                "role": "assistant",
+                "toolCallList": {
+                    "toolCalls": toolCalls
+                }
+            })
+        else:
+            # system, user, assistant w/o tool_calls or tool_results
+            role = message.get('role')
+            content = message.get('content', None)
+            
+            if content:
+                # EXPERIMENTAL
+                if not isinstance(content, str):
+                    content = str(content)
+                
+            messages_transformed.append({
+                "role": role,
+                "text": content
+            })
+        
+    logger.debug(f"Преобразование сообщений в формат Yandex GPT завершено, результат: {messages_transformed}, вызовы инструментов: {called_functions}")
+    return messages_transformed, called_functions
+
+def _adapt_message_for_openai(yandex_response: CompletionResponse, model: str) -> dict:
+            
+    tool_calls_bool = yandex_response.alternatives[0].status == "ALTERNATIVE_STATUS_TOOL_CALLS"
+    if tool_calls_bool:
+        tool_calls_obj = [
+            {
+                "id": "call_" + ''.join(random.choices(string.ascii_letters + string.digits, k=8)),
+                #"id": "call_abc123",
+                "type": "function",
+                "function": {
+                    "name": item.functionCall.name,
+                    "arguments": json.dumps(item.functionCall.arguments)
+                }
+            } for item in yandex_response.alternatives[0].message.toolCallList.toolCalls
+        ]
+        
+        role = "assistant"
+        finish_reason = "tool_calls"
+        content = None
+    else:
+        role = "assistant"
+        tool_calls_obj = None
+        finish_reason = "stop"
+        content = yandex_response.alternatives[0].message.text
+    
+    # Формирование ответа в формате OpenAI
+    openai_format_response = {
+        "id": "chatcmpl-42",
+        "object": "chat.completion",
+        "created": int(time.time()),
+        "model": f"{model}-by-{yandex_response.modelVersion}",
+        "system_fingerprint": "42",
+        "choices": [{
+            "index": 0,
+            "message": {
+                "role": role,
+                "content": content,
+                "tool_calls": tool_calls_obj
+            },
+            "logprobs": None,
+            "finish_reason": finish_reason
+        }],
+        "usage": {
+            "prompt_tokens": yandex_response.usage.inputTextTokens,
+            "completion_tokens": yandex_response.usage.completionTokens,
+            "total_tokens": yandex_response.usage.totalTokens
+        }
+    }
+
+    logger.debug(f"Формирование ответа в формате OpenAI завершено, ответ: {openai_format_response}")
+    return openai_format_response
 
 
+def _adapt_message_for_openai_stream_tool_calls(yandex_response: CompletionResponse, model: str) -> dict:
+    tool_calls_obj: list = [
+        {
+            "id": "call_" + ''.join(random.choices(string.ascii_letters + string.digits, k=8)),
+            #"id": "call_abc123",
+            "type": "function",
+            "function": {
+                "name": item.functionCall.name,
+                "arguments": json.dumps(item.functionCall.arguments)
+            }
+        } for item in yandex_response.alternatives[0].message.toolCallList.toolCalls
+    ]
+    
+    openai_format_response = {
+        "id": "chatcmpl-42",  # Здесь можно использовать уникальный ID
+        "object": "chat.completion.chunk",
+        "created": int(time.time()),
+        "model": "gpt-4o-mini-2024-07-18",
+        "system_fingerprint": "fp_e2bde53e6",
+        "choices": [
+            {
+                "index": 0,
+                "delta": {
+                    "role": "assistant",  # Добавляем роль
+                    "content": None,
+                    "tool_calls": tool_calls_obj
+                },
+                "logprobs": None,
+                "finish_reason": "tool_calls"
+            }
+        ]
+    }
+    
+    logger.debug(f"Формирование ответа в формате OpenAI завершено, ответ: {openai_format_response}")
+    return openai_format_response
+
+def _tool_from_message(messsage):
+    pass

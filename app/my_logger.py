@@ -10,7 +10,7 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 log_type = os.getenv("LOG_TYPE", "volume")
 
 # Настраиваем логирование
-logger.remove()
+#logger.remove()
 if log_type == "volume":
     # Логи записываются в файл
     logger.add("logs/debug.log", format="{time} {level} {message}", level=LOG_LEVEL, rotation="100 MB")
