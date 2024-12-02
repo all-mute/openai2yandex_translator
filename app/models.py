@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Literal
+from typing import List, Literal, Dict, Any, Optional, Union
 
 class CompletionOptions(BaseModel):
     stream: bool
@@ -7,17 +7,28 @@ class CompletionOptions(BaseModel):
     maxTokens: int = Field(..., gt=0)
 
 class Message(BaseModel):
-    role: Literal['system', 'assistant', 'user']
+    role: Literal['system', 'assistant', 'user', 'tool']
     text: str
 
 class CompletionRequest(BaseModel):
     modelUri: str
     completionOptions: CompletionOptions
-    messages: List[Message]
+    messages: Union[List[Message], None]
+    
+class Function(BaseModel):
+    name: str
+    arguments: Any
+    
+class FunctionCall(BaseModel):
+    functionCall: Function
+
+class ToolCallList(BaseModel):
+    toolCalls: List[FunctionCall]
 
 class AlternativeMessage(BaseModel):
     role: Literal['system', 'assistant', 'user']
-    text: str
+    text: Union[str, None] = None
+    toolCallList: Optional[ToolCallList] = None
 
 class Alternative(BaseModel):
     message: AlternativeMessage
@@ -26,7 +37,8 @@ class Alternative(BaseModel):
         'ALTERNATIVE_STATUS_PARTIAL',
         'ALTERNATIVE_STATUS_TRUNCATED_FINAL',
         'ALTERNATIVE_STATUS_FINAL',
-        'ALTERNATIVE_STATUS_CONTENT_FILTER'
+        'ALTERNATIVE_STATUS_CONTENT_FILTER',
+        'ALTERNATIVE_STATUS_TOOL_CALLS'
     ]
 
 class Usage(BaseModel):

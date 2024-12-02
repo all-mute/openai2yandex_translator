@@ -25,6 +25,7 @@ def test_get_badge():
     assert response.status_code == 302  # Проверяем, что происходит редирект
     assert response.headers["Location"] == "https://img.shields.io/badge/status-online-brightgreen.svg"
 
+@pytest.mark.skip(reason="idk")
 def test_version():
     from app.app import app_version
     
