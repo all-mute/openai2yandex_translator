@@ -1,0 +1,60 @@
+name: Deploy Serverless Container to Yandex Cloud (prod-stable)
+
+on:
+  push:
+    branches: [ "stable" ]
+
+jobs:
+
+  delpoy-stable:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Login to Yandex Cloud Container Registry
+      id: login-cr
+      uses: yc-actions/yc-cr-login@v1
+      with:
+        yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
+
+    - name: Build, tag, and push image to Yandex Cloud Container Registry
+      env:
+        CR_REGISTRY: crpel88gtvoc0esr11nd
+        CR_REPOSITORY: my-repo-prod-stable
+        IMAGE_TAG: ${{ github.sha }}
+
+      run: |
+        ls -a
+        docker build -t cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG -f YC-Dockerfile .
+        docker push cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG
+
+    - name: Deploy Serverless Container
+      id: deploy-sls-container
+      uses: yc-actions/yc-sls-container-deploy@v2.7.0
+
+      with:
+        yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
+        container-name: adapter-0-prod-stable
+        folder-id: b1gkvpmciuf1at2nkvcb
+        revision-service-account-id: ajekbtndj8s14af74itc
+        revision-cores: 1
+        revision-memory: 128Mb
+        revision-core-fraction: 100
+        revision-concurrency: 2
+        revision-provisioned: 1
+        revision-image-url: cr.yandex/crpel88gtvoc0esr11nd/my-repo-prod-stable:${{ github.sha }}
+        revision-execution-timeout: 120
+        public: true
+        
+        revision-log-options-log-group-id: e23p2mbdc5gis4an2ess
+        revision-log-options-min-level: level_unspecified
+
+        revision-env: |
+          GITHUB_SHA=${{ github.sha }}
+          GITHUB_REF=${{ github.ref }}
+
+          LOG_TYPE=yc
+          LOG_LEVEL=INFO
+
