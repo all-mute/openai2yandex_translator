@@ -10,6 +10,9 @@ import asyncio
 
 load_dotenv()
 
+GITHUB_SHA = os.getenv("GITHUB_SHA", "unknown_version")
+
+logger.configure(extra={"GITHUB_SHA": GITHUB_SHA})
 logger.info("App module initiated.")
 
 # Загрузка конфига
@@ -32,57 +35,60 @@ YANDEX_API_KEY = os.getenv("YANDEX_API_KEY", "")
 
 @app.post("/v1/chat/completions")
 async def completion(request: Request):
-    logger.info("Обработка запроса на генерацию ответа.", extra={"my-key": "my-value"})
-    logger.debug(f"Запрос: {request.method} {request.url}")
-    logger.debug(f"Заголовки: {request.headers}")
-    logger.debug(f"Тело запроса: {await request.json()}")
-    logger.debug(f"IP-адрес отправителя: {request.client.host}")
-    try:
-        logger.debug("Получение OPENAI_API_KEY из заголовка запроса.")
-        openai_api_key = request.headers.get("Authorization", "").split("Bearer ")[-1].strip()
+    with logger.contextualize(timestamp=time.time()):
+        logger.info("Обработка запроса на генерацию ответа.", extra={"my-key": "my-value"})
+        logger.debug(f"Запрос: {request.method} {request.url}")
+        logger.debug(f"Заголовки: {request.headers}")
+        logger.debug(f"Тело запроса: {await request.json()}")
+        logger.debug(f"IP-адрес отправителя: {request.client.host}")
         
-        logger.debug(f"Извлеченный OPENAI_API_KEY: {openai_api_key}")
         
-        # Определение Yandex API ключа и ID папки
-        if openai_api_key in autoauth_keys:
-            yandex_api_key, folder_id = YANDEX_API_KEY, FOLDER_ID
-            logger.debug("Использование Yandex API ключа из переменных окружения.")
-        else:
-            folder_id, yandex_api_key = openai_api_key.split("@")
-            logger.debug(f"Использование Yandex API ключа: {yandex_api_key} и ID папки: {folder_id}.")
-        
-        # Получение данных из запроса
-        body = await request.json()
-        model = body.get("model")
-        max_tokens = body.get("max_tokens", 2048)
-        temperature = body.get("temperature", 0.3)
-        messages = body.get("messages", [])
-        tools = body.get("tools", None)
-        stream = body.get("stream", False)
-        
-        logger.debug(f"Полученные данные: model={model}, max_tokens={max_tokens}, temperature={temperature}, messages={messages}, tools={tools}, stream={stream}")
-        logger.info(f"Используемая модель: {model}")
-        
-        # Генерация ответа от Yandex GPT
-        if stream:
+        try:
+            logger.debug("Получение OPENAI_API_KEY из заголовка запроса.")
+            openai_api_key = request.headers.get("Authorization", "").split("Bearer ")[-1].strip()
             
-            return StreamingResponse(generate_yandexgpt_stream_response(messages, tools, model, temperature, max_tokens, yandex_api_key, folder_id), media_type="text/event-stream")
-        else:
-            yandex_response, yandex_error = await generate_yandexgpt_response(messages, tools, model, temperature, max_tokens, yandex_api_key, folder_id)
-        
-            if yandex_error:
-                logger.error(f"Ошибка при генерации ответа от Yandex GPT: {yandex_error}")
-                return yandex_error
+            logger.debug(f"Извлеченный OPENAI_API_KEY: {openai_api_key}")
             
-            openai_format_response = _adapt_message_for_openai(yandex_response, model)
-            return openai_format_response
+            # Определение Yandex API ключа и ID папки
+            if openai_api_key in autoauth_keys:
+                yandex_api_key, folder_id = YANDEX_API_KEY, FOLDER_ID
+                logger.debug("Использование Yandex API ключа из переменных окружения.")
+            else:
+                folder_id, yandex_api_key = openai_api_key.split("@")
+                logger.debug(f"Использование Yandex Api-Key: {yandex_api_key} и ID папки: {folder_id}.")
+            
+            # Получение данных из запроса
+            body = await request.json()
+            model = body.get("model")
+            max_tokens = body.get("max_tokens", 2048)
+            temperature = body.get("temperature", 0.3)
+            messages = body.get("messages", [])
+            tools = body.get("tools", None)
+            stream = body.get("stream", False)
+            
+            logger.debug(f"Полученные данные: model={model}, max_tokens={max_tokens}, temperature={temperature}, messages={messages}, tools={tools}, stream={stream}")
+            logger.info(f"Используемая модель: {model}")
+            
+            # Генерация ответа от Yandex GPT
+            if stream:
+                
+                return StreamingResponse(generate_yandexgpt_stream_response(messages, tools, model, temperature, max_tokens, yandex_api_key, folder_id), media_type="text/event-stream")
+            else:
+                yandex_response, yandex_error = await generate_yandexgpt_response(messages, tools, model, temperature, max_tokens, yandex_api_key, folder_id)
+            
+                if yandex_error:
+                    logger.error(f"Ошибка при генерации ответа от Yandex GPT: {yandex_error}")
+                    return yandex_error
+                
+                openai_format_response = _adapt_message_for_openai(yandex_response, model)
+                return openai_format_response
         
-    except HTTPException as e:
-        logger.error(f"HTTP ошибка: {str(e)}")
-        return {"error": str(e)}  # Возврат ошибки в формате JSON
-    except Exception as e:
-        logger.error(f"Неожиданная ошибка: {str(e)}")
-        return {"error": "An unexpected error occurred."}  # Обработка неожиданных ошибок
+        except HTTPException as e:
+            logger.error(f"HTTP ошибка: {str(e)}")
+            return {"error": str(e)}  # Возврат ошибки в формате JSON
+        except Exception as e:
+            logger.error(f"Неожиданная ошибка: {str(e)}")
+            return {"error": "An unexpected error occurred."}  # Обработка неожиданных ошибок
 
 @app.post("/v1/embeddings")
 async def embeddings(request: Request):

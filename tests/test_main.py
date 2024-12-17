@@ -9,6 +9,7 @@ FOLDER_ID = os.getenv("FOLDER_ID", "")
 API_KEY = os.getenv("YANDEX_API_KEY", "")
 #PROXY_URL = "https://d5det46m4e43042pnnfj.apigw.yandexcloud.net"
 PROXY_URL = "http://localhost:9041"
+#PROXY_URL = "https://bbafv6hdkrihhcvh9u78.containers.yandexcloud.net"
 
 system_prompt = "Answer with only one word to my question"
 user_prompt = "What is the meaning of life?"
