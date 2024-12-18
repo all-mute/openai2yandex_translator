@@ -1,0 +1,28 @@
+name: Docker Image
+
+on:
+  push:
+    branches: [ "main", "stable", "dev" ]
+  pull_request:
+    branches: [ "main", "stable", "dev" ]
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Docker image tag
+      id: vars
+      run: echo "IMAGE_TAG=my-image-name:$(date +%s)" >> $GITHUB_ENV
+
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag ${{ env.IMAGE_TAG }}
+
+    - name: Run the Docker container
+      run: docker run -d --name my-container ${{ env.IMAGE_TAG }}

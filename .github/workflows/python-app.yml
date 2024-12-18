@@ -1,0 +1,61 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+      - stable
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: '0 0 */3 * *'
+
+jobs:
+  test_auth:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        cp .env.example .env
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest langchain langchain-openai
+
+    - name: Start FastAPI application
+      run: |
+        chmod +x start_app.sh
+        ./start_app.sh
+      env:
+        PYTHONUNBUFFERED: '1'
+
+    - name: Wait for the server to start
+      run: sleep 5
+
+    - name: Run simple tests
+      env:
+        PYTHONPATH: .
+      run: |
+        pytest tests/test_fastapi.py
+        pytest tests/test_unit.py
+
+    - name: Create .testenv file
+      run: |
+        echo "FOLDER_ID=${{ secrets.TEST_FOLDER_ID }}" > .testenv
+        echo "YANDEX_API_KEY=${{ secrets.TEST_YANDEX_API_KEY }}" >> .testenv
+
+    - name: Run e2e and langchain tests
+      env:
+        PYTHONPATH: .
+      run: |
+        pytest tests/test_e2e.py
+        pytest tests/test_langchain.py

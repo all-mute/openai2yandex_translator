@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  openai_yandexgpt_adapter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: openai-yandexgpt-adapter
+    ports:
+      - "127.0.0.1:9041:9041"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9041/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    environment:
+      LOG_TYPE: volume
+      LOG_LEVEL: DEBUG
+    volumes:
+      - type: bind
+        source: ./logs
+        target: /app/logs
+    networks:
+      - adapter_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  adapter_network:
+    driver: bridge
+
