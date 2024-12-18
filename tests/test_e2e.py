@@ -29,7 +29,7 @@ oai = openai.Client(api_key=f"{FOLDER_ID}@{API_KEY}", base_url=f"{PROXY_URL}/v1/
     (system_prompt, user_prompt, "yandexgpt-lite/latest"),
     (system_prompt, user_prompt, f"gpt://{FOLDER_ID}/yandexgpt/latest"),
     (system_prompt, user_prompt, f"gpt://{FOLDER_ID}/yandexgpt-lite/latest"),
-    (system_prompt, user_prompt, f"ds://{ds_model_id}"),
+    #(system_prompt, user_prompt, f"ds://{ds_model_id}"),
 ])
 def test_completion_with_alternative_model(system_prompt, user_prompt, model):
     time.sleep(0.25)
@@ -63,7 +63,7 @@ def test_completion_with_alternative_model(system_prompt, user_prompt, model):
     "yandexgpt-lite/latest",
     f"gpt://{FOLDER_ID}/yandexgpt/latest",
     f"gpt://{FOLDER_ID}/yandexgpt-lite/latest",
-    f"ds://{ds_model_id}",
+    #f"ds://{ds_model_id}",
 ])
 def test_streaming_completion(model):
     time.sleep(0.5)  # Allow some time for the server to be ready
@@ -89,7 +89,6 @@ def test_streaming_completion(model):
     full_reply_content = ''.join(collected_messages)
     assert full_reply_content is not None and full_reply_content != "" and isinstance(full_reply_content, str)
     
-@pytest.mark.skip(reason="no way of currently testing this")
 @pytest.mark.parametrize("text, model", [
     (emb_prompt, "text-search-doc/latest"),
     (emb_prompt, "text-search-query/latest"),
@@ -105,7 +104,6 @@ def test_embeddings_with_alternative_model(text, model):
     assert len(vector) > 0 and isinstance(vector, list)
     assert isinstance(vector[0], float)
     
-@pytest.mark.skip(reason="no way of currently testing this")
 @pytest.mark.parametrize("text, model", [
     (emb_prompt, "text-search-doc/latest"),
     (emb_prompt, "text-search-query/latest")

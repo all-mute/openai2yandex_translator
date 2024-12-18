@@ -54,9 +54,9 @@ from typing import Optional
 load_dotenv()
 
 YC_COMPLETIONS_MODEL_MAP = os.getenv("YC_COMPLETIONS_MODEL_MAP", "gpt-4o:yandexgpt/latest,gpt-4o-mini:yandexgpt-lite/latest,gpt-3.5:yandexgpt/latest,gpt-3.5-turbo:yandexgpt/latest,gpt-5:yandexgpt/latest")
-YC_LOG_POLICY = os.getenv("YC_LOG_POLICY", "True").lower() == "true"
+YC_LOG_POLICY = os.getenv("YC_FOMO_LOG_POLICY", "True").lower() == "true"
 YC_SERVICE_URL = os.getenv("YC_SERVICE_URL", "https://llm.api.cloud.yandex.net")
-YC_COMPLETIONS_RETRY = os.getenv("YC_COMPLETIONS_RETRY", "True").lower() == "true"
+YC_COMPLETION_RETRIES = os.getenv("YC_COMPLETION_RETRIES", "True").lower() == "true"
 
 try:
     completions_model_map = {k: v for k, v in [item.split(":") for item in YC_COMPLETIONS_MODEL_MAP.split(",")]}
@@ -97,8 +97,8 @@ UNSUPPORTED_PARAMETERS = {
 }
 
 async def send_request(url: str, headers: dict, body: str, timeout: int = 60):
-    #if YC_COMPLETIONS_RETRY:
-    if False:
+    if YC_COMPLETION_RETRIES:
+    #if False:
         return await send_request_with_retry(url, headers, body, timeout)
     else:
         return await send_request_without_retry(url, headers, body, timeout)

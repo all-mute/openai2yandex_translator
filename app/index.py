@@ -53,10 +53,10 @@ from app.yandex.completions import (
     _adapt_openai_to_yc_completions,
     generate_yandexgpt_response
 )
-#from app.yandex.embeddings import (
-    #_adapt_openai_to_yc_embeddings,
-    #generate_yandexgpt_embeddings_response
-#)
+from app.yandex.embeddings import (
+    _adapt_openai_to_yc_embeddings,
+    generate_yandexgpt_embeddings_response_batch
+)
 
 load_dotenv()
 
@@ -189,20 +189,35 @@ async def embeddings(request: Request):
     body = await request.json()
     logger.debug(f"Body: {body}")
     
-    oai_text_embedding_request = OpenAIEmbeddingCreateParams(**body)
-    #logger.debug(f"OaiTextEmbeddingRequest: {oai_text_embedding_request}")
+    oai_text_embedding_request: OpenAIEmbeddingCreateParams = body
     
-    yc_text_embedding_request: YaTextEmbeddingRequest = await _adapt_openai_to_yc_embeddings(oai_text_embedding_request, folder_id)
+    yc_text_embedding_requests: list[YaTextEmbeddingRequest] = await _adapt_openai_to_yc_embeddings(oai_text_embedding_request, folder_id)
     
-    return await generate_yandexgpt_embeddings_response(yc_text_embedding_request, folder_id, yandex_api_key)
+    return await generate_yandexgpt_embeddings_response_batch(yc_text_embedding_requests, folder_id, yandex_api_key)
 
 def _decode_openai_api_key(request):
     openai_api_key = request.headers.get("Authorization", "").split("Bearer ")[-1].strip()
+    
+    if not openai_api_key:
+        logger.error("Пустой API ключ")
+        raise HTTPException(status_code=401, detail="Invalid API key provided")
+    
     logger.debug(f"OpenAI Api-key: {openai_api_key}")
     
-    folder_id, yandex_api_key = openai_api_key.split("@")
-    logger.debug(f"Folder ID: {folder_id}\nYandex Api-key: {yandex_api_key}")
+    try:
+        folder_id, yandex_api_key = openai_api_key.split("@")
+        
+        if not folder_id or not yandex_api_key:
+            raise ValueError("Пустой folder_id или yandex_api_key")
+            
+    except ValueError as e:
+        logger.error(f"Ошибка при разборе API ключа: {str(e)}")
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid API key format. Expected format: 'folder_id@yandex_api_key'"
+        )
     
+    logger.debug(f"Folder ID: {folder_id}\nYandex Api-key: {yandex_api_key}")
     return folder_id, yandex_api_key
 
 
